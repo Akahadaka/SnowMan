@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "app",
+  "productName": "SnowMan",
   "version": "0.1.0",
-  "identifier": "com.bravo.app",
+  "identifier": "com.akahadaka.snowman",
   "build": {
     "beforeDevCommand": "npm run start",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "app",
+        "title": "SnowMan",
         "width": 800,
         "height": 600
       }
@@ -24,6 +24,11 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

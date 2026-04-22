@@ -1,10 +1,38 @@
-<main class="container">
-  <h1>{{ title }}</h1>
+<main class="shell">
+  <aside class="sidebar">
+    <div class="brand-block">
+      <p class="eyebrow">SnowRunner Mod Manager</p>
+      <h1>{{ title }}</h1>
+      <p class="brand-copy">A safe desktop workspace for profiles, mods, and diagnostics.</p>
+    </div>
 
-  <p>Iteration 00 baseline is running.</p>
+    <nav class="nav" aria-label="Primary">
+      @for (item of navigationItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-link"
+        >
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+  </aside>
 
-  <button type="button" (click)="ping()">Ping backend</button>
-  <p>{{ greetingMessage }}</p>
+  <section class="content">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Iteration 01</p>
+        <h2>App Shell</h2>
+      </div>
 
-  <router-outlet />
+      <div class="ping-box">
+        <button type="button" (click)="ping()">Ping backend</button>
+        <p>{{ greetingMessage || "Waiting for backend check" }}</p>
+      </div>
+    </header>
+
+    <router-outlet />
+  </section>
 </main>
