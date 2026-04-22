@@ -4,10 +4,13 @@ import {
   type GameId,
   type StoreId,
 } from "./game-discovery.types";
+import type { ProfilesMap } from "./profile.types";
 
 export interface StoreGameSettings {
   installPath: string;
   profileRootPath: string;
+  profiles?: ProfilesMap;
+  activeProfileId?: string | null;
 }
 
 export type StoreGamesMap = Partial<Record<GameId, StoreGameSettings>>;
