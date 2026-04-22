@@ -23,4 +23,4 @@ After each completed iteration:
 
 ## Current Baseline
 - Active baseline branch pattern: `feature/<iter>-<slug>` from `develop`
-- Iteration 06 spec: `plan/spec-06-safety-engine-dry-run.md`
+- Iteration 07 spec: `plan/spec-07-controlled-deploy-launch-restore.md`

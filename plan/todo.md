@@ -14,3 +14,30 @@ Review and prioritise at the end of the initial development phase.
   would let us auto-discover installs on drives like `D:\SteamLibrary\`
   without requiring the user to manually enter a path.
   _Raised during Iteration 04._
+
+## Save Management
+
+- **Add save file versioning and rollback history**
+  Track timestamped versions of backed-up save data so users can inspect and
+  restore older save states, not just the most recent backup. This would allow
+  safer experimentation with profiles and deployments when mod changes affect
+  game progression or save compatibility. Extend this to watch the active save
+  directory while the game is running, detect periodic save-file updates
+  (roughly every 10 minutes), and keep a rolling version history automatically
+  after launch.
+  _Raised during Iteration 07._
+
+## Mod Compatibility
+
+- **Detect file-level conflicts between mods and smart-merge when possible**
+  When two mods both modify the same game file, detect whether their changes
+  can be cleanly merged (e.g. non-overlapping XML entries, purely additive
+  changes). If a clean merge is possible, automatically merge them and allow
+  both mods to co-exist in the same profile. If the changes are genuinely
+  incompatible, show a clear warning when the user attempts to add the
+  conflicting mod to a profile that already contains a mod touching the same
+  file. This conflict-warning behavior should be the default conservative
+  posture of the app — when in doubt, warn rather than silently overwrite.
+  Depends on the save file versioning / history system (see Save Management)
+  as baseline context for change detection.
+  _Raised during Iteration 07._
