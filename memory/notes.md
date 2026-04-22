@@ -19,6 +19,9 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 - Build discovery as a game-provider architecture: SnowRunner implementation first, but generic contracts from day one.
 - Make profiles and persisted game paths game-aware (`gameId` namespacing) to support multi-game expansion.
 
+## Backlog
+- Out-of-scope ideas are tracked in `plan/todo.md`. Add to it as they arise; review and prioritise at the end of the initial development phase.
+
 ## Risks / Follow-ups
 - Environment: some terminals may not have Node/NPM on PATH even when repository scripts assume it.
 - Iteration 05: introduce game-aware profiles CRUD keyed by `gameId` using the new provider foundation.
