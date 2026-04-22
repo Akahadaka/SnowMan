@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
+  getInstallPathForGame,
   loadSettings,
   mergeSettings,
   saveSettings,
   type AppSettings,
 } from "./settings.persistence";
+import { SNOWRUNNER_GAME_ID } from "./game-discovery.types";
 
 class MemoryStorage implements Storage {
   private readonly data = new Map<string, string>();
@@ -48,8 +50,14 @@ describe("settings persistence", () => {
   it("writes and reads settings using the storage key", () => {
     const storage = new MemoryStorage();
     const settings: AppSettings = {
-      gameInstallPath: "C:/Games/SnowRunner",
+      selectedGameId: SNOWRUNNER_GAME_ID,
       autoBackupOnDeploy: false,
+      games: {
+        snowrunner: {
+          installPath: "C:/Games/SnowRunner",
+          profileRootPath: "C:/Users/bravo/Documents/SnowMan/profiles/snowrunner",
+        },
+      },
     };
 
     saveSettings(storage, settings);
@@ -61,15 +69,53 @@ describe("settings persistence", () => {
 
   it("merges partial updates with existing values", () => {
     const base: AppSettings = {
-      gameInstallPath: "D:/SnowRunner",
+      selectedGameId: SNOWRUNNER_GAME_ID,
       autoBackupOnDeploy: true,
+      games: {
+        snowrunner: {
+          installPath: "D:/SnowRunner",
+          profileRootPath: "D:/SnowRunner/profiles",
+        },
+      },
     };
 
-    const merged = mergeSettings({ autoBackupOnDeploy: false }, base);
+    const merged = mergeSettings(
+      {
+        autoBackupOnDeploy: false,
+        games: {
+          snowrunner: {
+            installPath: "E:/SnowRunner",
+          },
+        },
+      },
+      base,
+    );
 
     expect(merged).toEqual({
-      gameInstallPath: "D:/SnowRunner",
+      selectedGameId: SNOWRUNNER_GAME_ID,
       autoBackupOnDeploy: false,
+      games: {
+        snowrunner: {
+          installPath: "E:/SnowRunner",
+          profileRootPath: "D:/SnowRunner/profiles",
+        },
+      },
     });
+  });
+
+  it("migrates legacy top-level gameInstallPath into snowrunner namespaced settings", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        gameInstallPath: "C:/Legacy/SnowRunner",
+        autoBackupOnDeploy: true,
+      }),
+    );
+
+    const loaded = loadSettings(storage);
+
+    expect(getInstallPathForGame(loaded, SNOWRUNNER_GAME_ID)).toBe("C:/Legacy/SnowRunner");
+    expect(loaded.selectedGameId).toBe(SNOWRUNNER_GAME_ID);
   });
 });
