@@ -5,10 +5,11 @@ import { fetchPing } from "./ping.bridge";
 describe("typed Tauri command bridge", () => {
   it("registers the ping command", () => {
     expect(registeredCommands).toContain("ping");
+    expect(registeredCommands).toContain("launch_game");
   });
 
   it("covers exactly the expected command set", () => {
-    expect([...registeredCommands]).toEqual(["ping"]);
+    expect([...registeredCommands]).toEqual(["ping", "launch_game"]);
   });
 
   it("fetchPing calls the typed invoke function with the ping command", async () => {

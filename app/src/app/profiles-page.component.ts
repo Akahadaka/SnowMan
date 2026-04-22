@@ -1,7 +1,13 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { launchExecutable } from "./launcher.bridge";
 import { getProfiles } from "./profiles.persistence";
 import type { Profile } from "./profile.types";
+import {
+  createNamedProfile,
+  deriveLaunchContext,
+  selectActiveProfile,
+} from "./profiles-page.logic";
 import {
   loadSettings,
   mergeSettings,
@@ -57,8 +63,46 @@ import {
         </div>
       </div>
 
+      <div class="actions-panel">
+        <label for="profileName">New Profile Name</label>
+        <div class="create-row">
+          <input
+            id="profileName"
+            name="profileName"
+            type="text"
+            [(ngModel)]="newProfileName"
+            placeholder="e.g. Vanilla Safe"
+          />
+          <button type="button" (click)="createProfile()">Create Profile</button>
+        </div>
+        <p class="status">{{ statusMessage }}</p>
+      </div>
+
       <p class="summary">Profiles in active context: {{ profiles.length }}</p>
-      <p>Create, switch, and validate profiles for the active game context in this workspace.</p>
+
+      @if (profiles.length > 0) {
+        <ul class="profiles-list">
+          @for (profile of profiles; track profile.id) {
+            <li>
+              <label class="profile-row">
+                <input
+                  type="radio"
+                  name="activeProfile"
+                  [checked]="profile.id === activeProfileId"
+                  (change)="setActiveProfile(profile.id)"
+                />
+                <span>{{ profile.name }}</span>
+              </label>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="launch-row">
+        <button type="button" (click)="launchFromActiveProfile()">
+          Launch From Active Profile
+        </button>
+      </div>
     </section>
   `,
   styles: `
@@ -108,10 +152,69 @@ import {
       cursor: not-allowed;
     }
 
+    .actions-panel {
+      margin-top: 12px;
+      max-width: 760px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .create-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      border: 1px solid rgba(16, 33, 43, 0.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.9);
+      width: 100%;
+    }
+
+    button {
+      border: 1px solid rgba(16, 33, 43, 0.2);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-weight: 600;
+      background: #1a2f38;
+      color: #eff8fb;
+      cursor: pointer;
+    }
+
     .summary {
       margin-top: 10px;
       font-weight: 600;
       color: #314952;
+    }
+
+    .status {
+      margin: 0;
+      color: #4e6771;
+      font-size: 0.9rem;
+      min-height: 20px;
+    }
+
+    .profiles-list {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0;
+      max-width: 760px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .profile-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: #314952;
+    }
+
+    .launch-row {
+      margin-top: 10px;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -120,9 +223,11 @@ import {
         background: rgba(8, 19, 24, 0.52);
       }
 
+      .profile-row,
       .context-panel h3,
       .context-panel p,
       .summary,
+      .status,
       label {
         color: #d3e7ee;
       }
@@ -132,6 +237,18 @@ import {
         background: rgba(7, 17, 22, 0.72);
         color: #b8ced6;
       }
+
+      input[type="text"] {
+        border: 1px solid rgba(239, 248, 251, 0.2);
+        background: rgba(8, 19, 24, 0.76);
+        color: #eff8fb;
+      }
+
+      button {
+        border: 1px solid rgba(239, 248, 251, 0.2);
+        background: rgba(11, 33, 44, 0.92);
+        color: #eff8fb;
+      }
     }
   `,
 })
@@ -139,8 +256,11 @@ export class ProfilesPageComponent {
   readonly storeOptions: ReadonlyArray<StoreOption> = STORE_OPTIONS;
   readonly gameOptions: ReadonlyArray<GameOption> = GAME_OPTIONS;
 
-  readonly settings: AppSettings;
-  readonly profiles: Profile[];
+  settings: AppSettings;
+  profiles: Profile[] = [];
+  activeProfileId: string | null = null;
+  newProfileName = "";
+  statusMessage = "";
 
   private readonly storage: StorageLike;
 
@@ -156,11 +276,66 @@ export class ProfilesPageComponent {
     );
     saveSettings(this.storage, this.settings);
 
+    this.refreshProfiles();
+  }
+
+  createProfile(): void {
+    const result = createNamedProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.newProfileName,
+    );
+
+    if (!result.created || !result.profile) {
+      this.statusMessage = "Enter a non-empty profile name.";
+      return;
+    }
+
+    this.settings = result.settings;
+    saveSettings(this.storage, this.settings);
+    this.newProfileName = "";
+    this.statusMessage = `Created profile '${result.profile.name}'.`;
+    this.refreshProfiles();
+  }
+
+  setActiveProfile(profileId: string): void {
+    this.settings = selectActiveProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      profileId,
+    );
+    saveSettings(this.storage, this.settings);
+    this.statusMessage = "Active profile updated.";
+    this.refreshProfiles();
+  }
+
+  async launchFromActiveProfile(): Promise<void> {
+    const launchContext = deriveLaunchContext(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+    );
+
+    if (!launchContext.canLaunch || !launchContext.executablePath) {
+      this.statusMessage = launchContext.reason ?? "Launch blocked by profile context.";
+      return;
+    }
+
+    const launched = await launchExecutable(launchContext.executablePath);
+    this.statusMessage = launched ? "Launch command sent." : "Failed to launch game executable.";
+  }
+
+  private refreshProfiles(): void {
     this.profiles = getProfiles(
       this.settings,
       this.settings.selectedStoreId,
       this.settings.selectedGameId,
     );
+    this.activeProfileId =
+      this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
+        ?.activeProfileId ?? null;
   }
 
   private resolveStorage(): StorageLike {
