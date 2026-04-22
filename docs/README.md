@@ -23,4 +23,4 @@ After each completed iteration:
 
 ## Current Baseline
 - Active baseline branch pattern: `feature/<iter>-<slug>` from `develop`
-- Iteration 01 spec: `plan/spec-01-app-shell.md`
+- Iteration 03 spec: `plan/spec-03-settings-persistence-foundation.md`
