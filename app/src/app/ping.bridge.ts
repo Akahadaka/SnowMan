@@ -1,7 +1,7 @@
 export type InvokeFn = (command: string) => Promise<string>;
 
 export function getAppTitle(): string {
-  return "Snowman";
+  return "SnowMan";
 }
 
 export async function fetchPing(invokeFn: InvokeFn): Promise<string> {

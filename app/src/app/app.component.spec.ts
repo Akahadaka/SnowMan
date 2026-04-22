@@ -4,7 +4,7 @@ import { shellNavigationItems } from "./shell.navigation";
 
 describe("app shell configuration", () => {
   it("exposes Snowman branding and primary navigation items", () => {
-    expect(getAppTitle()).toBe("Snowman");
+    expect(getAppTitle()).toBe("SnowMan");
     expect(shellNavigationItems).toEqual([
       { label: "Dashboard", path: "/dashboard" },
       { label: "Profiles", path: "/profiles" },
