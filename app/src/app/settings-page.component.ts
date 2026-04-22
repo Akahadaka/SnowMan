@@ -3,6 +3,7 @@ import { FormsModule } from "@angular/forms";
 import {
   getInstallPathForStore,
   loadSettings,
+  mergeSettings,
   saveSettings,
   type AppSettings,
   type StorageLike,
@@ -14,6 +15,14 @@ import {
   type SettingsFormValues,
 } from "./settings-page.logic";
 import { pickDirectory } from "./dialog.bridge";
+import {
+  ACTIVE_GAME_ID,
+  ACTIVE_STORE_ID,
+  GAME_OPTIONS,
+  STORE_OPTIONS,
+  type GameOption,
+  type StoreOption,
+} from "./game-context";
 
 @Component({
   selector: "app-settings-page",
@@ -25,8 +34,28 @@ import { pickDirectory } from "./dialog.bridge";
       <h2>Application Settings</h2>
       <p>Persist baseline settings now so future iterations can build on stable state.</p>
 
+      <div class="context-panel" aria-label="Active game context">
+        <h3>Active Context</h3>
+        <p>Select Store then Game before editing settings.</p>
+        <div class="context-grid">
+          <label for="storeId">Store</label>
+          <select id="storeId" name="storeId" [ngModel]="settings.selectedStoreId" disabled>
+            @for (option of storeOptions; track option.id) {
+              <option [value]="option.id">{{ option.label }}</option>
+            }
+          </select>
+
+          <label for="gameId">Game</label>
+          <select id="gameId" name="gameId" [ngModel]="settings.selectedGameId" disabled>
+            @for (option of gameOptions; track option.id) {
+              <option [value]="option.id">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
       <form class="settings-form" (ngSubmit)="save()">
-        <label for="gameInstallPath">Game Install Path</label>
+        <label for="gameInstallPath">Install Path (Active Game)</label>
         <div class="path-row">
           <input
             id="gameInstallPath"
@@ -58,18 +87,54 @@ import { pickDirectory } from "./dialog.bridge";
       max-width: 760px;
     }
 
+    .context-panel {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid rgba(16, 33, 43, 0.16);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      max-width: 760px;
+    }
+
+    .context-panel h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      color: #1a2f38;
+    }
+
+    .context-panel p {
+      margin: 0 0 10px;
+      color: #4e6771;
+      font-size: 0.9rem;
+    }
+
+    .context-grid {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 10px;
+      align-items: center;
+      max-width: 560px;
+    }
+
     label {
       font-weight: 600;
       color: #314952;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    select {
       border: 1px solid rgba(16, 33, 43, 0.2);
       border-radius: 10px;
       padding: 10px 12px;
       font-size: 0.95rem;
       background: rgba(255, 255, 255, 0.9);
       width: 100%;
+    }
+
+    select:disabled {
+      color: #49616b;
+      background: rgba(245, 248, 250, 0.95);
+      cursor: not-allowed;
     }
 
     .path-row {
@@ -120,10 +185,26 @@ import { pickDirectory } from "./dialog.bridge";
         color: #d3e7ee;
       }
 
-      input[type="text"] {
+      .context-panel {
+        border: 1px solid rgba(239, 248, 251, 0.2);
+        background: rgba(8, 19, 24, 0.52);
+      }
+
+      .context-panel h3,
+      .context-panel p {
+        color: #d3e7ee;
+      }
+
+      input[type="text"],
+      select {
         border: 1px solid rgba(239, 248, 251, 0.2);
         background: rgba(8, 19, 24, 0.76);
         color: #eff8fb;
+      }
+
+      select:disabled {
+        color: #b8ced6;
+        background: rgba(7, 17, 22, 0.72);
       }
 
       .secondary {
@@ -135,15 +216,26 @@ import { pickDirectory } from "./dialog.bridge";
   `,
 })
 export class SettingsPageComponent {
+  readonly storeOptions: ReadonlyArray<StoreOption> = STORE_OPTIONS;
+  readonly gameOptions: ReadonlyArray<GameOption> = GAME_OPTIONS;
+
   form: SettingsFormValues;
   saveState: "idle" | "saved" = "idle";
 
   private readonly storage: StorageLike;
-  private settings: AppSettings;
+  settings: AppSettings;
 
   constructor() {
     this.storage = this.resolveStorage();
-    this.settings = loadSettings(this.storage);
+    const loaded = loadSettings(this.storage);
+    this.settings = mergeSettings(
+      {
+        selectedStoreId: ACTIVE_STORE_ID,
+        selectedGameId: ACTIVE_GAME_ID,
+      },
+      loaded,
+    );
+    saveSettings(this.storage, this.settings);
     this.form = createInitialSettingsForm(this.settings);
   }
 
