@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ModsPageComponent } from "./mods-page.component";
+import * as dialogBridge from "./dialog.bridge";
 
 describe("ModsPageComponent", () => {
   it("renders without errors", () => {
@@ -7,11 +8,12 @@ describe("ModsPageComponent", () => {
     expect(component).toBeTruthy();
   });
 
-  it("emits importMod output when import is triggered", () => {
+  it("emits importMod output when import is triggered", async () => {
+    vi.spyOn(dialogBridge, "pickDirectory").mockResolvedValue(null);
     const component = new ModsPageComponent();
     let emitCount = 0;
     component.importMod.subscribe(() => emitCount++);
-    component.triggerImport();
+    await component.triggerImport("profile-1");
     expect(emitCount).toBe(1);
   });
 });
