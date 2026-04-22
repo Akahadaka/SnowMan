@@ -5,9 +5,9 @@ import { ProfilesPageComponent } from "./profiles-page.component";
 import { SettingsPageComponent } from "./settings-page.component";
 
 export const routes: Routes = [
-	{ path: "", redirectTo: "dashboard", pathMatch: "full" },
-	{ path: "dashboard", component: DashboardPageComponent },
-	{ path: "profiles", component: ProfilesPageComponent },
-	{ path: "mods", component: ModsPageComponent },
-	{ path: "settings", component: SettingsPageComponent },
+  { path: "", redirectTo: "dashboard", pathMatch: "full" },
+  { path: "dashboard", component: DashboardPageComponent },
+  { path: "profiles", component: ProfilesPageComponent },
+  { path: "mods", component: ModsPageComponent },
+  { path: "settings", component: SettingsPageComponent },
 ];

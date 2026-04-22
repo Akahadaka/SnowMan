@@ -11,12 +11,6 @@ describe("app routes", () => {
   it("defines the primary top-level routes", () => {
     const paths = routes.map((route) => route.path);
 
-    expect(paths).toEqual([
-      "",
-      "dashboard",
-      "profiles",
-      "mods",
-      "settings",
-    ]);
+    expect(paths).toEqual(["", "dashboard", "profiles", "mods", "settings"]);
   });
 });
