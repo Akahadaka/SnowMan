@@ -48,5 +48,10 @@ Deliver a minimal, working desktop application baseline that proves the full sta
 Iteration 00 is complete when all acceptance criteria pass in CI, local run instructions are verified by at least one clean checkout, and Red -> Green evidence is included in the PR notes.
 
 ## Open Questions
-- Exact package manager choice for frontend (`npm` vs `pnpm`).
-- Whether to enforce formatting checks in Iteration 00 or defer to Iteration 01.
+- Resolved: frontend package manager is `npm` for Iteration 00.
+- Resolved: formatting checks are deferred to Iteration 01.
+
+## Implementation Outcome
+- Frontend and Tauri scaffold created under `app/`.
+- `ping` command bridge implemented end-to-end (Angular -> Tauri invoke -> Rust).
+- PR workflow added at `.github/workflows/pr-validation.yml` for frontend and Rust validation.
