@@ -88,3 +88,38 @@ jobs:
           target_commitish: main
           generate_release_notes: true
           files: artifacts/**/*
+
+  bump-develop-version:
+    name: Bump minor version on develop
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/') }}
+    runs-on: ubuntu-latest
+    needs: publish-release
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Compute next minor version
+        run: |
+          VERSION="${GITHUB_HEAD_REF#release/}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          NEXT_VERSION="${MAJOR}.$((MINOR + 1)).0"
+          echo "RELEASED_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_ENV"
+
+      - name: Update version in app files
+        run: |
+          sed -i "s/\"version\": \"${RELEASED_VERSION}\"/\"version\": \"${NEXT_VERSION}\"/" app/src-tauri/tauri.conf.json
+          sed -i "s/\"version\": \"${RELEASED_VERSION}\"/\"version\": \"${NEXT_VERSION}\"/" app/package.json
+          sed -i "s/^version = \"${RELEASED_VERSION}\"/version = \"${NEXT_VERSION}\"/" app/src-tauri/Cargo.toml
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src-tauri/tauri.conf.json app/package.json app/src-tauri/Cargo.toml
+          git commit -m "chore: bump version to ${NEXT_VERSION} after release v${RELEASED_VERSION}"
+          git push origin develop
