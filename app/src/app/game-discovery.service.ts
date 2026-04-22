@@ -20,12 +20,12 @@ export function discoverGameInstallPath(
     };
   });
 
-  const found = validatedCandidates.find((candidate) => candidate.isValid);
+  const validCandidates = validatedCandidates.filter((c) => c.isValid);
 
   return {
     gameId,
-    status: found ? "found" : "not-found",
-    discoveredPath: found?.path ?? null,
+    status: validCandidates.length > 0 ? "found" : "not-found",
+    validCandidates,
     candidates: validatedCandidates,
   };
 }

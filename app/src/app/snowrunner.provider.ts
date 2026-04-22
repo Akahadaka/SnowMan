@@ -1,24 +1,50 @@
-import { getInstallPathForGame, type AppSettings } from "./settings.persistence";
-import { SNOWRUNNER_GAME_ID, type DiscoveryCandidate } from "./game-discovery.types";
+import { getInstallPathForStore, type AppSettings } from "./settings.persistence";
+import {
+  SNOWRUNNER_GAME_ID,
+  STEAM_STORE_ID,
+  EPIC_STORE_ID,
+  type DiscoveryCandidate,
+  type StoreId,
+} from "./game-discovery.types";
 import type { GameProvider, PathValidationResult } from "./game-provider";
 
-const KNOWN_INSTALL_CANDIDATES = [
-  "C:/Program Files (x86)/Steam/steamapps/common/SnowRunner",
-  "C:/Program Files/Epic Games/SnowRunner",
+const KNOWN_INSTALL_CANDIDATES: Array<{ path: string; storeId: StoreId }> = [
+  {
+    path: "C:/Program Files (x86)/Steam/steamapps/common/SnowRunner",
+    storeId: STEAM_STORE_ID,
+  },
+  {
+    path: "C:/Program Files/Epic Games/SnowRunner",
+    storeId: EPIC_STORE_ID,
+  },
 ];
 
 export const snowrunnerProvider: GameProvider = {
   id: SNOWRUNNER_GAME_ID,
 
   discoverCandidates(settings: AppSettings): DiscoveryCandidate[] {
-    const fromSettings = getInstallPathForGame(settings, SNOWRUNNER_GAME_ID);
-    const paths = [fromSettings, ...KNOWN_INSTALL_CANDIDATES].filter((path) => path.length > 0);
-    const uniquePaths = [...new Set(paths)];
+    const candidates: DiscoveryCandidate[] = [];
 
-    return uniquePaths.map((path, index) => ({
-      path,
-      source: index === 0 && fromSettings ? "settings" : "known-location",
-    }));
+    // Per-store saved paths take priority
+    const storeIds: StoreId[] = [STEAM_STORE_ID, EPIC_STORE_ID];
+    for (const storeId of storeIds) {
+      const savedPath = getInstallPathForStore(settings, storeId, SNOWRUNNER_GAME_ID);
+      if (savedPath) {
+        candidates.push({ path: savedPath, storeId, source: "settings" });
+      }
+    }
+
+    // Fall back to known default locations only if that store has no saved path yet
+    for (const known of KNOWN_INSTALL_CANDIDATES) {
+      const alreadyFromSettings = candidates.some(
+        (c) => c.storeId === known.storeId && c.source === "settings",
+      );
+      if (!alreadyFromSettings) {
+        candidates.push({ ...known, source: "known-location" });
+      }
+    }
+
+    return candidates;
   },
 
   validateInstallPath(path: string): PathValidationResult {

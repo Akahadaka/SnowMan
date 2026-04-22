@@ -4,7 +4,7 @@ import {
   createInitialSettingsForm,
   toSettingsPayload,
 } from "./settings-page.logic";
-import { SNOWRUNNER_GAME_ID } from "./game-discovery.types";
+import { SNOWRUNNER_GAME_ID, STEAM_STORE_ID } from "./game-discovery.types";
 import { DEFAULT_SETTINGS } from "./settings.persistence";
 
 describe("settings page logic", () => {
@@ -12,11 +12,16 @@ describe("settings page logic", () => {
     const form = createInitialSettingsForm({
       ...DEFAULT_SETTINGS,
       selectedGameId: SNOWRUNNER_GAME_ID,
+      selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: true,
-      games: {
-        snowrunner: {
-          installPath: "C:/SnowRunner",
-          profileRootPath: "",
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: "C:/SnowRunner",
+              profileRootPath: "",
+            },
+          },
         },
       },
     });
@@ -38,11 +43,16 @@ describe("settings page logic", () => {
 
     expect(payload).toEqual({
       selectedGameId: SNOWRUNNER_GAME_ID,
+      selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: false,
-      games: {
-        snowrunner: {
-          installPath: "C:/SnowRunner",
-          profileRootPath: "",
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: "C:/SnowRunner",
+              profileRootPath: "",
+            },
+          },
         },
       },
     });

@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-  getInstallPathForGame,
+  getInstallPathForStore,
   loadSettings,
   saveSettings,
   type AppSettings,
@@ -124,7 +124,11 @@ export class SettingsPageComponent {
     saveSettings(this.storage, this.settings);
 
     this.form = applySettingsPatch(this.form, {
-      gameInstallPath: getInstallPathForGame(this.settings, this.settings.selectedGameId),
+      gameInstallPath: getInstallPathForStore(
+        this.settings,
+        this.settings.selectedStoreId,
+        this.settings.selectedGameId,
+      ),
       autoBackupOnDeploy: this.settings.autoBackupOnDeploy,
     });
     this.saveState = "saved";

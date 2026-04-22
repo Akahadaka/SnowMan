@@ -1,35 +1,46 @@
-import { SNOWRUNNER_GAME_ID, type GameId } from "./game-discovery.types";
+import {
+  SNOWRUNNER_GAME_ID,
+  STEAM_STORE_ID,
+  type GameId,
+  type StoreId,
+} from "./game-discovery.types";
 
-export interface GameSettings {
+export interface StoreGameSettings {
   installPath: string;
   profileRootPath: string;
 }
 
-export type GamesSettingsMap = Record<GameId, GameSettings>;
+export type StoreGamesMap = Partial<Record<GameId, StoreGameSettings>>;
+
+export interface StoreSettings {
+  games: StoreGamesMap;
+}
+
+export type StoresSettingsMap = Partial<Record<StoreId, StoreSettings>>;
 
 export interface AppSettings {
   selectedGameId: GameId;
+  selectedStoreId: StoreId;
   autoBackupOnDeploy: boolean;
-  games: GamesSettingsMap;
+  stores: StoresSettingsMap;
 }
 
 export interface SettingsPatch {
   selectedGameId?: GameId;
+  selectedStoreId?: StoreId;
   autoBackupOnDeploy?: boolean;
-  games?: Partial<Record<GameId, Partial<GameSettings>>>;
+  stores?: Partial<
+    Record<StoreId, { games?: Partial<Record<GameId, Partial<StoreGameSettings>>> }>
+  >;
 }
 
 export const SETTINGS_STORAGE_KEY = "snowman.settings.v1";
 
 export const DEFAULT_SETTINGS: AppSettings = {
   selectedGameId: SNOWRUNNER_GAME_ID,
+  selectedStoreId: STEAM_STORE_ID,
   autoBackupOnDeploy: true,
-  games: {
-    snowrunner: {
-      installPath: "",
-      profileRootPath: "",
-    },
-  },
+  stores: {},
 };
 
 export interface StorageLike {
@@ -37,20 +48,27 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-export function getInstallPathForGame(settings: AppSettings, gameId: GameId): string {
-  return settings.games[gameId].installPath;
+export function getInstallPathForStore(
+  settings: AppSettings,
+  storeId: StoreId,
+  gameId: GameId,
+): string {
+  return settings.stores[storeId]?.games[gameId]?.installPath ?? "";
 }
 
-export function setInstallPathForGame(
+export function setInstallPathForStore(
   settings: AppSettings,
+  storeId: StoreId,
   gameId: GameId,
   installPath: string,
 ): AppSettings {
   return mergeSettings(
     {
-      games: {
-        [gameId]: {
-          installPath,
+      stores: {
+        [storeId]: {
+          games: {
+            [gameId]: { installPath },
+          },
         },
       },
     },
@@ -59,15 +77,41 @@ export function setInstallPathForGame(
 }
 
 export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSettings {
+  const mergedStores: StoresSettingsMap = { ...base.stores };
+
+  if (patch.stores) {
+    const patchStores = patch.stores;
+    (Object.keys(patchStores) as StoreId[]).forEach((storeId) => {
+      const storePatch = patchStores[storeId];
+      if (!storePatch) return;
+
+      const baseStore = base.stores[storeId] ?? { games: {} };
+      const mergedGames: StoreGamesMap = { ...baseStore.games };
+
+      if (storePatch.games) {
+        const patchGames = storePatch.games;
+        (Object.keys(patchGames) as GameId[]).forEach((gameId) => {
+          const gamePatch = patchGames[gameId];
+          if (!gamePatch) return;
+
+          mergedGames[gameId] = {
+            installPath: "",
+            profileRootPath: "",
+            ...baseStore.games[gameId],
+            ...gamePatch,
+          };
+        });
+      }
+
+      mergedStores[storeId] = { games: mergedGames };
+    });
+  }
+
   return {
     selectedGameId: patch.selectedGameId ?? base.selectedGameId,
+    selectedStoreId: patch.selectedStoreId ?? base.selectedStoreId,
     autoBackupOnDeploy: patch.autoBackupOnDeploy ?? base.autoBackupOnDeploy,
-    games: {
-      snowrunner: {
-        ...base.games.snowrunner,
-        ...(patch.games?.snowrunner ?? {}),
-      },
-    },
+    stores: mergedStores,
   };
 }
 
@@ -83,9 +127,13 @@ function migrateLegacyShape(parsed: Record<string, unknown>): SettingsPatch {
 
   return {
     autoBackupOnDeploy: legacyAutoBackup,
-    games: {
-      snowrunner: {
-        installPath: legacyInstallPath ?? "",
+    stores: {
+      steam: {
+        games: {
+          snowrunner: {
+            installPath: legacyInstallPath ?? "",
+          },
+        },
       },
     },
   };

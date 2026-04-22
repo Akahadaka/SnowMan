@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
-  getInstallPathForGame,
+  getInstallPathForStore,
   loadSettings,
   mergeSettings,
   saveSettings,
   type AppSettings,
 } from "./settings.persistence";
-import { SNOWRUNNER_GAME_ID } from "./game-discovery.types";
+import { SNOWRUNNER_GAME_ID, STEAM_STORE_ID } from "./game-discovery.types";
 
 class MemoryStorage implements Storage {
   private readonly data = new Map<string, string>();
@@ -51,11 +51,16 @@ describe("settings persistence", () => {
     const storage = new MemoryStorage();
     const settings: AppSettings = {
       selectedGameId: SNOWRUNNER_GAME_ID,
+      selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: false,
-      games: {
-        snowrunner: {
-          installPath: "C:/Games/SnowRunner",
-          profileRootPath: "C:/Users/bravo/Documents/SnowMan/profiles/snowrunner",
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: "C:/Games/SnowRunner",
+              profileRootPath: "C:/Users/bravo/Documents/SnowMan/profiles/snowrunner",
+            },
+          },
         },
       },
     };
@@ -70,11 +75,16 @@ describe("settings persistence", () => {
   it("merges partial updates with existing values", () => {
     const base: AppSettings = {
       selectedGameId: SNOWRUNNER_GAME_ID,
+      selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: true,
-      games: {
-        snowrunner: {
-          installPath: "D:/SnowRunner",
-          profileRootPath: "D:/SnowRunner/profiles",
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: "D:/SnowRunner",
+              profileRootPath: "D:/SnowRunner/profiles",
+            },
+          },
         },
       },
     };
@@ -82,9 +92,13 @@ describe("settings persistence", () => {
     const merged = mergeSettings(
       {
         autoBackupOnDeploy: false,
-        games: {
-          snowrunner: {
-            installPath: "E:/SnowRunner",
+        stores: {
+          steam: {
+            games: {
+              snowrunner: {
+                installPath: "E:/SnowRunner",
+              },
+            },
           },
         },
       },
@@ -93,11 +107,16 @@ describe("settings persistence", () => {
 
     expect(merged).toEqual({
       selectedGameId: SNOWRUNNER_GAME_ID,
+      selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: false,
-      games: {
-        snowrunner: {
-          installPath: "E:/SnowRunner",
-          profileRootPath: "D:/SnowRunner/profiles",
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: "E:/SnowRunner",
+              profileRootPath: "D:/SnowRunner/profiles",
+            },
+          },
         },
       },
     });
@@ -115,7 +134,9 @@ describe("settings persistence", () => {
 
     const loaded = loadSettings(storage);
 
-    expect(getInstallPathForGame(loaded, SNOWRUNNER_GAME_ID)).toBe("C:/Legacy/SnowRunner");
+    expect(getInstallPathForStore(loaded, STEAM_STORE_ID, SNOWRUNNER_GAME_ID)).toBe(
+      "C:/Legacy/SnowRunner",
+    );
     expect(loaded.selectedGameId).toBe(SNOWRUNNER_GAME_ID);
   });
 });

@@ -1,7 +1,7 @@
 import {
-  getInstallPathForGame,
+  getInstallPathForStore,
   mergeSettings,
-  setInstallPathForGame,
+  setInstallPathForStore,
   type AppSettings,
 } from "./settings.persistence";
 
@@ -12,7 +12,11 @@ export interface SettingsFormValues {
 
 export function createInitialSettingsForm(settings: AppSettings): SettingsFormValues {
   return {
-    gameInstallPath: getInstallPathForGame(settings, settings.selectedGameId),
+    gameInstallPath: getInstallPathForStore(
+      settings,
+      settings.selectedStoreId,
+      settings.selectedGameId,
+    ),
     autoBackupOnDeploy: settings.autoBackupOnDeploy,
   };
 }
@@ -25,8 +29,9 @@ export function toSettingsPayload(values: SettingsFormValues, current: AppSettin
     current,
   );
 
-  return setInstallPathForGame(
+  return setInstallPathForStore(
     withBackup,
+    withBackup.selectedStoreId,
     withBackup.selectedGameId,
     values.gameInstallPath.trim(),
   );
