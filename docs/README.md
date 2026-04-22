@@ -23,4 +23,4 @@ After each completed iteration:
 
 ## Current Baseline
 - Active baseline branch pattern: `feature/<iter>-<slug>` from `develop`
-- Iteration 03 spec: `plan/spec-03-settings-persistence-foundation.md`
+- Iteration 04 spec: `plan/spec-04-game-directory-discovery.md`

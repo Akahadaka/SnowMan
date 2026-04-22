@@ -1,4 +1,9 @@
-import type { AppSettings, SettingsPatch } from "./settings.persistence";
+import {
+  getInstallPathForStore,
+  mergeSettings,
+  setInstallPathForStore,
+  type AppSettings,
+} from "./settings.persistence";
 
 export interface SettingsFormValues {
   gameInstallPath: string;
@@ -7,21 +12,34 @@ export interface SettingsFormValues {
 
 export function createInitialSettingsForm(settings: AppSettings): SettingsFormValues {
   return {
-    gameInstallPath: settings.gameInstallPath,
+    gameInstallPath: getInstallPathForStore(
+      settings,
+      settings.selectedStoreId,
+      settings.selectedGameId,
+    ),
     autoBackupOnDeploy: settings.autoBackupOnDeploy,
   };
 }
 
-export function toSettingsPayload(values: SettingsFormValues): AppSettings {
-  return {
-    gameInstallPath: values.gameInstallPath.trim(),
-    autoBackupOnDeploy: values.autoBackupOnDeploy,
-  };
+export function toSettingsPayload(values: SettingsFormValues, current: AppSettings): AppSettings {
+  const withBackup = mergeSettings(
+    {
+      autoBackupOnDeploy: values.autoBackupOnDeploy,
+    },
+    current,
+  );
+
+  return setInstallPathForStore(
+    withBackup,
+    withBackup.selectedStoreId,
+    withBackup.selectedGameId,
+    values.gameInstallPath.trim(),
+  );
 }
 
 export function applySettingsPatch(
   values: SettingsFormValues,
-  patch: SettingsPatch,
+  patch: Partial<SettingsFormValues>,
 ): SettingsFormValues {
   return {
     ...values,

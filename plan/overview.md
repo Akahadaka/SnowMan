@@ -52,7 +52,7 @@ Build a safe, profile-based SnowRunner mod manager for Windows first, with archi
 - Iteration 01: App shell and navigation skeleton
 - Iteration 02: Typed Tauri command bridge
 - Iteration 03: Settings and persistence foundation
-- Iteration 04: Game path discovery and validation
+- Iteration 04: Game path discovery and validation (modular provider architecture; SnowRunner-first)
 - Iteration 05: Profiles CRUD
 - Iteration 06: Safety engine dry-run
 - Iteration 07: Controlled deploy/launch/restore

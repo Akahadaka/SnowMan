@@ -1,6 +1,12 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { loadSettings, saveSettings, type StorageLike } from "./settings.persistence";
+import {
+  getInstallPathForStore,
+  loadSettings,
+  saveSettings,
+  type AppSettings,
+  type StorageLike,
+} from "./settings.persistence";
 import {
   applySettingsPatch,
   createInitialSettingsForm,
@@ -105,17 +111,26 @@ export class SettingsPageComponent {
   saveState: "idle" | "saved" = "idle";
 
   private readonly storage: StorageLike;
+  private settings: AppSettings;
 
   constructor() {
     this.storage = this.resolveStorage();
-    const settings = loadSettings(this.storage);
-    this.form = createInitialSettingsForm(settings);
+    this.settings = loadSettings(this.storage);
+    this.form = createInitialSettingsForm(this.settings);
   }
 
   save(): void {
-    const payload = toSettingsPayload(this.form);
-    saveSettings(this.storage, payload);
-    this.form = applySettingsPatch(this.form, payload);
+    this.settings = toSettingsPayload(this.form, this.settings);
+    saveSettings(this.storage, this.settings);
+
+    this.form = applySettingsPatch(this.form, {
+      gameInstallPath: getInstallPathForStore(
+        this.settings,
+        this.settings.selectedStoreId,
+        this.settings.selectedGameId,
+      ),
+      autoBackupOnDeploy: this.settings.autoBackupOnDeploy,
+    });
     this.saveState = "saved";
   }
 
