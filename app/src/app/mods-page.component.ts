@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, EventEmitter, Output } from "@angular/core";
 
 @Component({
   selector: "app-mods-page",
@@ -6,9 +6,15 @@ import { Component } from "@angular/core";
   template: `
     <section class="page">
       <p class="eyebrow">Mods</p>
-      <h2>Mod Catalog Placeholder</h2>
-      <p>Local mod import and mod.io flows will land in later iterations.</p>
+      <h2>Mod Manager</h2>
+      <button (click)="triggerImport()">Import Mod</button>
     </section>
   `,
 })
-export class ModsPageComponent {}
+export class ModsPageComponent {
+  @Output() importMod = new EventEmitter<void>();
+
+  triggerImport(): void {
+    this.importMod.emit();
+  }
+}

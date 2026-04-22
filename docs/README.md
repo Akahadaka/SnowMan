@@ -23,4 +23,4 @@ After each completed iteration:
 
 ## Current Baseline
 - Active baseline branch pattern: `feature/<iter>-<slug>` from `develop`
-- Iteration 07 spec: `plan/spec-07-controlled-deploy-launch-restore.md`
+- Iteration 09 spec: `plan/spec-09-local-mod-import-metadata.md`
