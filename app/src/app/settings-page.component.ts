@@ -13,6 +13,7 @@ import {
   toSettingsPayload,
   type SettingsFormValues,
 } from "./settings-page.logic";
+import { pickDirectory } from "./dialog.bridge";
 
 @Component({
   selector: "app-settings-page",
@@ -26,13 +27,16 @@ import {
 
       <form class="settings-form" (ngSubmit)="save()">
         <label for="gameInstallPath">Game Install Path</label>
-        <input
-          id="gameInstallPath"
-          name="gameInstallPath"
-          type="text"
-          [(ngModel)]="form.gameInstallPath"
-          placeholder="C:/Program Files (x86)/Steam/steamapps/common/SnowRunner"
-        />
+        <div class="path-row">
+          <input
+            id="gameInstallPath"
+            name="gameInstallPath"
+            type="text"
+            [(ngModel)]="form.gameInstallPath"
+            placeholder="C:/Program Files (x86)/Steam/steamapps/common/SnowRunner"
+          />
+          <button type="button" class="secondary" (click)="browseInstallPath()">Browse...</button>
+        </div>
 
         <label class="checkbox-row">
           <input name="autoBackupOnDeploy" type="checkbox" [(ngModel)]="form.autoBackupOnDeploy" />
@@ -65,6 +69,24 @@ import {
       padding: 10px 12px;
       font-size: 0.95rem;
       background: rgba(255, 255, 255, 0.9);
+      width: 100%;
+    }
+
+    .path-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .secondary {
+      border: 1px solid rgba(16, 33, 43, 0.3);
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 0.92rem;
+      background: rgba(255, 255, 255, 0.9);
+      color: #1a2f38;
+      cursor: pointer;
+      white-space: nowrap;
     }
 
     .checkbox-row {
@@ -103,6 +125,12 @@ import {
         background: rgba(8, 19, 24, 0.76);
         color: #eff8fb;
       }
+
+      .secondary {
+        border: 1px solid rgba(239, 248, 251, 0.24);
+        background: rgba(8, 19, 24, 0.76);
+        color: #eff8fb;
+      }
     }
   `,
 })
@@ -132,6 +160,19 @@ export class SettingsPageComponent {
       autoBackupOnDeploy: this.settings.autoBackupOnDeploy,
     });
     this.saveState = "saved";
+  }
+
+  async browseInstallPath(): Promise<void> {
+    const selectedPath = await pickDirectory();
+
+    if (!selectedPath) {
+      return;
+    }
+
+    this.form = applySettingsPatch(this.form, {
+      gameInstallPath: selectedPath,
+    });
+    this.saveState = "idle";
   }
 
   private resolveStorage(): StorageLike {
