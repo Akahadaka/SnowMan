@@ -8,6 +8,8 @@ import { invoke } from "@tauri-apps/api/core";
 export interface CommandMap {
   ping: string;
   launch_game: null;
+  download_and_extract_zip: string;
+  deploy_launch_restore: null;
 }
 
 export type CommandName = keyof CommandMap;
@@ -16,6 +18,16 @@ export interface CommandArgsMap {
   ping: undefined;
   launch_game: {
     executablePath: string;
+  };
+  download_and_extract_zip: {
+    url: string;
+    destinationPath: string;
+  };
+  deploy_launch_restore: {
+    executablePath: string;
+    installRootPath: string;
+    backups: Array<{ targetPath: string; backupPath: string }>;
+    copies: Array<{ sourcePath: string; targetPath: string }>;
   };
 }
 
@@ -26,7 +38,12 @@ export type TauriInvokeFn = <C extends CommandName>(
 ) => Promise<CommandMap[C]>;
 
 /** All registered command names, available at runtime for validation. */
-export const registeredCommands: ReadonlyArray<CommandName> = ["ping", "launch_game"] as const;
+export const registeredCommands: ReadonlyArray<CommandName> = [
+  "ping",
+  "launch_game",
+  "download_and_extract_zip",
+  "deploy_launch_restore",
+] as const;
 
 /**
  * Production adapter: the only file that may import from @tauri-apps/api/core.

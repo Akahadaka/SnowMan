@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ModsPageComponent } from "./mods-page.component";
-import * as dialogBridge from "./dialog.bridge";
 
 describe("ModsPageComponent", () => {
   it("renders without errors", () => {
@@ -8,12 +7,9 @@ describe("ModsPageComponent", () => {
     expect(component).toBeTruthy();
   });
 
-  it("emits importMod output when import is triggered", async () => {
-    vi.spyOn(dialogBridge, "pickDirectory").mockResolvedValue(null);
+  it("exposes at least one approved mod", () => {
     const component = new ModsPageComponent();
-    let emitCount = 0;
-    component.importMod.subscribe(() => emitCount++);
-    await component.triggerImport("profile-1");
-    expect(emitCount).toBe(1);
+    expect(component.approvedMods.length).toBeGreaterThan(0);
+    expect(component.approvedMods[0].id).toBe("real-life-mod");
   });
 });

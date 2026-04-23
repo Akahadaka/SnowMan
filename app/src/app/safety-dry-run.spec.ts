@@ -110,4 +110,26 @@ describe("safety dry-run", () => {
     expect(report.canProceed).toBe(false);
     expect(report.issues.some((issue) => issue.code === "target-collision")).toBe(true);
   });
+
+  it("allows same mod to write multiple entries into the same target", () => {
+    const candidates: DeployCandidate[] = [
+      {
+        modId: "real-life-mod",
+        sourcePath: "D:/mods/real-life-mod/media",
+        relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        targetExists: true,
+      },
+      {
+        modId: "real-life-mod",
+        sourcePath: "D:/mods/real-life-mod/strings",
+        relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        targetExists: true,
+      },
+    ];
+
+    const report = runSafetyDryRun(candidates);
+
+    expect(report.canProceed).toBe(true);
+    expect(report.issues.some((issue) => issue.code === "target-collision")).toBe(false);
+  });
 });

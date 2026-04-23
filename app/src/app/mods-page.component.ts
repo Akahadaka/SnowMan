@@ -1,8 +1,10 @@
-import { Component, EventEmitter, Output } from "@angular/core";
-import { pickDirectory } from "./dialog.bridge";
+import { Component } from "@angular/core";
+import { APPROVED_MODS, getApprovedMod } from "./approved-mods.catalog";
+import { toDownloadedModPath } from "./approved-mods.logic";
 import { ACTIVE_GAME_ID, ACTIVE_STORE_ID } from "./game-context";
 import { addModToProfile, getModsForProfile, importModFromFolder } from "./mod.import";
-import type { ModEntry } from "./mod.types";
+import type { ModEntry, ApprovedModDefinition } from "./mod.types";
+import { downloadAndExtractZip } from "./mods.runtime.bridge";
 import { getProfiles } from "./profiles.persistence";
 import type { Profile } from "./profile.types";
 import {
@@ -28,22 +30,39 @@ import {
       @for (profile of profiles; track profile.id) {
         <div class="profile-section">
           <h3>{{ profile.name }}</h3>
-          <button type="button" (click)="triggerImport(profile.id)">Import Mod</button>
 
-          @if (modsFor(profile.id).length > 0) {
-            <ul class="mods-list">
-              @for (mod of modsFor(profile.id); track mod.id) {
-                <li class="mod-row">
-                  <span class="mod-name">{{ mod.name }}</span>
-                  <span class="mod-path">{{ mod.sourceFolderPath }}</span>
-                </li>
+          @for (approved of approvedMods; track approved.id) {
+            <div class="mod-row">
+              <span class="mod-name">{{ approved.name }}</span>
+              <span class="mod-path">{{ approved.modIoUrl }}</span>
+              <p class="hint">{{ approved.description }}</p>
+
+              @if (modByApprovedId(profile.id, approved.id); as existing) {
+                <div class="options-grid">
+                  @for (option of approved.options; track option.id) {
+                    <label class="option-row">
+                      <input
+                        type="checkbox"
+                        [checked]="isOptionSelected(existing, option.id)"
+                        (change)="toggleOption(profile.id, approved.id, option.id, $any($event.target).checked)"
+                      />
+                      <span>{{ option.label }}</span>
+                    </label>
+                  }
+                </div>
               }
-            </ul>
-          } @else {
-            <p class="hint">No mods imported yet.</p>
+
+              <div class="actions-row">
+                <button type="button" (click)="addApprovedMod(profile.id, approved)">
+                  {{ modByApprovedId(profile.id, approved.id) ? "Re-download" : "Add to Profile" }}
+                </button>
+              </div>
+            </div>
           }
         </div>
       }
+
+      <p class="hint">{{ statusMessage }}</p>
     </section>
   `,
   styles: `
@@ -71,13 +90,31 @@ import {
     }
 
     .mod-row {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       gap: 2px;
       padding: 8px 10px;
       border: 1px solid rgba(16, 33, 43, 0.1);
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.6);
+      margin-top: 8px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .option-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #314952;
+    }
+
+    .actions-row {
+      margin-top: 8px;
     }
 
     .mod-name {
@@ -137,10 +174,10 @@ import {
   `,
 })
 export class ModsPageComponent {
-  @Output() importMod = new EventEmitter<void>();
-
+  readonly approvedMods = APPROVED_MODS;
   settings: AppSettings;
   profiles: Profile[] = [];
+  statusMessage = "";
 
   private readonly storage: StorageLike;
 
@@ -165,19 +202,78 @@ export class ModsPageComponent {
     );
   }
 
-  async triggerImport(profileId: string): Promise<void> {
-    this.importMod.emit();
+  modByApprovedId(profileId: string, approvedModId: string): ModEntry | undefined {
+    return this.modsFor(profileId).find((entry) => entry.approvedModId === approvedModId);
+  }
 
-    const folderPath = await pickDirectory();
-    if (!folderPath) return;
+  isOptionSelected(mod: ModEntry, optionId: string): boolean {
+    return Boolean(mod.selectedOptions?.[optionId]);
+  }
 
-    const modEntry = importModFromFolder(folderPath);
+  async addApprovedMod(profileId: string, approved: ApprovedModDefinition): Promise<void> {
+    const installPath =
+      this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
+        ?.installPath ?? "";
+
+    if (!installPath.trim()) {
+      this.statusMessage = "Set install path in Settings before adding approved mods.";
+      return;
+    }
+
+    const destination = toDownloadedModPath(installPath, approved.id);
+    const extractedPath = await downloadAndExtractZip(approved.downloadUrl, destination);
+    if (!extractedPath) {
+      this.statusMessage = "Failed to download/extract approved mod package.";
+      return;
+    }
+
+    const current = this.modByApprovedId(profileId, approved.id);
+    const modEntry = importModFromFolder(extractedPath, {
+      id: approved.id,
+      name: approved.name,
+      description: approved.description,
+    });
+    modEntry.approvedModId = approved.id;
+    modEntry.selectedOptions = current?.selectedOptions ?? {};
+
     this.settings = addModToProfile(
       this.settings,
       this.settings.selectedStoreId,
       this.settings.selectedGameId,
       profileId,
       modEntry,
+    );
+    saveSettings(this.storage, this.settings);
+
+    this.statusMessage = `Added '${approved.name}' to profile and downloaded to downloaded/${approved.id}.`;
+  }
+
+  toggleOption(
+    profileId: string,
+    approvedModId: string,
+    optionId: string,
+    checked: boolean,
+  ): void {
+    const approved = getApprovedMod(approvedModId);
+    const existing = this.modByApprovedId(profileId, approvedModId);
+    if (!approved || !existing) {
+      return;
+    }
+
+    const updated: ModEntry = {
+      ...existing,
+      selectedOptions: {
+        ...(existing.selectedOptions ?? {}),
+        [optionId]: checked,
+      },
+    };
+
+    this.settings = addModToProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      profileId,
+      updated,
     );
     saveSettings(this.storage, this.settings);
   }

@@ -1,6 +1,9 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { launchExecutable } from "./launcher.bridge";
+import { buildCandidatesForApprovedMod } from "./approved-mods.logic";
+import { executeControlledDeploy } from "./deploy-execution";
+import { launchWithManagedDeploy } from "./launcher.bridge";
+import { getModsForProfile } from "./mod.import";
 import { getProfiles } from "./profiles.persistence";
 import type { Profile } from "./profile.types";
 import {
@@ -323,8 +326,39 @@ export class ProfilesPageComponent {
       return;
     }
 
-    const launched = await launchExecutable(launchContext.executablePath);
-    this.statusMessage = launched ? "Launch command sent." : "Failed to launch game executable.";
+    const installPath =
+      this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
+        ?.installPath ?? "";
+
+    const profileId = launchContext.activeProfileId;
+    const mods = profileId
+      ? Object.values(
+          getModsForProfile(
+            this.settings,
+            this.settings.selectedStoreId,
+            this.settings.selectedGameId,
+            profileId,
+          ),
+        )
+      : [];
+
+    const candidates = mods.flatMap((mod) => buildCandidatesForApprovedMod(mod));
+    const deployResult = executeControlledDeploy(candidates, new Date().toISOString());
+
+    if (deployResult.status === "blocked") {
+      this.statusMessage = "Launch blocked: mod deploy preflight failed.";
+      return;
+    }
+
+    const launched = await launchWithManagedDeploy(
+      launchContext.executablePath,
+      installPath,
+      deployResult.plannedBackups,
+      deployResult.plannedCopies,
+    );
+    this.statusMessage = launched
+      ? "Game launched. Mods deployed; backups will be restored when the game exits."
+      : "Failed to launch game executable.";
   }
 
   private refreshProfiles(): void {
