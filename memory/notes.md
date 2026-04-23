@@ -12,6 +12,8 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 - Iteration 05 branch: feature/05-profiles-crud
 - Iteration 06 branch: feature/06-safety-engine-dry-run
 - Iteration 07 branch: feature/07-controlled-deploy-launch-restore
+- Iteration 08 branch: feature/07-controlled-deploy-launch-restore (spec-08-profile-create-and-launch-flow, merged with PR #8)
+- Iteration 09 branch: feature/09-local-mod-import-metadata
 
 ## Decision Log
 - Use `npm` as frontend package manager for V1 baseline.
@@ -23,10 +25,11 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 - Make profiles and persisted game paths game-aware (`gameId` namespacing) to support multi-game expansion.
 - Safety dry-run should be pure and deterministic: report risks before deploy, no file I/O in Iteration 06.
 - Controlled deploy/launch/restore should compose dry-run results and remain pure until file I/O lands.
+- Local mod import keeps file-system walking injectable (pure unit tests) — existsChecker and file list are injected, not real I/O.
 
 ## Backlog
 - Out-of-scope ideas are tracked in `plan/todo.md`. Add to it as they arise; review and prioritise at the end of the initial development phase.
 
 ## Risks / Follow-ups
 - Environment: some terminals may not have Node/NPM on PATH even when repository scripts assume it.
-- Iteration 08: add mod metadata/import so deploy candidates can come from real selected mods.
+- Iteration 09: add mod metadata/import so deploy candidates can come from real selected mods.

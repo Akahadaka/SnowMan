@@ -73,6 +73,7 @@ export function runSafetyDryRun(candidates: DeployCandidate[]): SafetyDryRunRepo
       sourcePath: candidate.sourcePath,
       targetPath: normalizedTargetPath,
       needsBackup: candidate.targetExists,
+      installStrategy: candidate.installStrategy ?? "direct-copy",
     });
 
     if (candidate.targetExists) {
@@ -83,11 +84,12 @@ export function runSafetyDryRun(candidates: DeployCandidate[]): SafetyDryRunRepo
   }
 
   for (const [targetPath, modIds] of targetMap.entries()) {
-    if (modIds.length <= 1) {
+    const uniqueModIds = [...new Set(modIds)];
+    if (uniqueModIds.length <= 1) {
       continue;
     }
 
-    for (const modId of modIds) {
+    for (const modId of uniqueModIds) {
       issues.push({
         code: "target-collision",
         message: `Multiple mods target '${targetPath}'.`,

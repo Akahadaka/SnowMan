@@ -41,3 +41,29 @@ Review and prioritise at the end of the initial development phase.
   Depends on the save file versioning / history system (see Save Management)
   as baseline context for change detection.
   _Raised during Iteration 07._
+
+## mod.io Metadata and Updates
+
+- **Import mod.io metadata into local mod entries (English-first)**
+  For mods tracked by mod.io URL or mod ID, fetch and store canonical metadata
+  from mod.io (name, summary, description_plaintext, tags, stats, author,
+  profile_url, current modfile version, file_id, date_updated). Prefer English
+  text where available for local display and search indexing.
+
+  For manual-install mods (for example mods tagged `Manual` with install steps
+  in description), capture structured install guidance from description text and
+  mark the mod as manual-install so the UI can show recipe/checklist behavior
+  instead of one-click install expectations.
+  _Raised during Iteration 09._
+
+- **Monitor subscribed mods on app startup and auto-download updates**
+  On app open, sync only the authenticated user's subscribed mods (not the full
+  game catalog) and compare local installed `file_id/version` against latest
+  modfile data from mod.io. Queue and auto-download updates for subscribed mods
+  only, with per-mod controls (auto, notify-only, ignore version) and bandwidth
+  safeguards.
+
+  Keep this conservative by default: do not install updates that require manual
+  patching steps without explicit user confirmation; instead show update-available
+  state and required manual actions.
+  _Raised during Iteration 09._
