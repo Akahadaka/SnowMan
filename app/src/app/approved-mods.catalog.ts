@@ -6,8 +6,7 @@ export const APPROVED_MODS: ReadonlyArray<ApprovedModDefinition> = [
     id: "real-life-mod",
     name: "Real Life Mod",
     modIoUrl: "https://mod.io/g/snowrunner/m/real-life-mod#description",
-    downloadUrl:
-      "https://g-306.modapi.io/v1/games/306/mods/182067/files/7624356/download",
+    downloadUrl: "https://g-306.modapi.io/v1/games/306/mods/182067/files/7624356/download",
     description:
       "Manual-install mod curated by SnowMan. Downloaded and extracted into downloaded/real-life-mod.",
     // Base install always overlays these entries into initial.pak.

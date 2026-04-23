@@ -29,7 +29,9 @@ function parseCatalogRow(row: {
       description: row.description,
       modIoUrl: row.modIoUrl,
       downloadUrl: row.downloadUrl,
-      baseInstallSteps: JSON.parse(row.baseInstallStepsJson) as ApprovedModDefinition["baseInstallSteps"],
+      baseInstallSteps: JSON.parse(
+        row.baseInstallStepsJson,
+      ) as ApprovedModDefinition["baseInstallSteps"],
       options: JSON.parse(row.optionsJson) as ApprovedModDefinition["options"],
     };
   } catch {
@@ -37,16 +39,15 @@ function parseCatalogRow(row: {
   }
 }
 
-export async function syncCatalog(definitions: ReadonlyArray<ApprovedModDefinition>): Promise<void> {
+export async function syncCatalog(
+  definitions: ReadonlyArray<ApprovedModDefinition>,
+): Promise<void> {
   await tauriInvoke("sync_mod_catalog", {
     entries: definitions.map((definition) => toCatalogInput(definition)),
   });
 }
 
-export async function searchCatalog(
-  query: string,
-  limit = 200,
-): Promise<ApprovedModDefinition[]> {
+export async function searchCatalog(query: string, limit = 200): Promise<ApprovedModDefinition[]> {
   const rows = await tauriInvoke("search_mod_catalog", { query, limit });
   return rows
     .map((row) => parseCatalogRow(row))

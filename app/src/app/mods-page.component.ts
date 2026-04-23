@@ -2,7 +2,12 @@ import { Component } from "@angular/core";
 import { APPROVED_MODS, getApprovedMod } from "./approved-mods.catalog";
 import { toDownloadedModPath } from "./approved-mods.logic";
 import { ACTIVE_GAME_ID, ACTIVE_STORE_ID } from "./game-context";
-import { loadProfileSelections, saveProfileSelection, searchCatalog, syncCatalog } from "./mod-catalog.db";
+import {
+  loadProfileSelections,
+  saveProfileSelection,
+  searchCatalog,
+  syncCatalog,
+} from "./mod-catalog.db";
 import { addModToProfile, getModsForProfile, importModFromFolder } from "./mod.import";
 import type { ModEntry, ApprovedModDefinition, ApprovedModOption } from "./mod.types";
 import { downloadAndExtractZip } from "./mods.runtime.bridge";
@@ -56,7 +61,14 @@ import {
                         type="checkbox"
                         [checked]="isOptionSelected(existing, option)"
                         [disabled]="isOptionDisabled(option)"
-                        (change)="toggleOption(profile.id, approved.id, option.id, $any($event.target).checked)"
+                        (change)="
+                          toggleOption(
+                            profile.id,
+                            approved.id,
+                            option.id,
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       <span>{{ option.label }}</span>
                     </label>
@@ -425,4 +437,3 @@ export class ModsPageComponent {
     };
   }
 }
-

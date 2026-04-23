@@ -28,7 +28,6 @@ export function buildCandidatesForApprovedDefinition(
   modEntry: ModEntry,
   approved: ApprovedModDefinition,
 ): DeployCandidate[] {
-
   const selected = modEntry.selectedOptions ?? {};
   const installSteps: ApprovedModInstallStep[] = [
     ...approved.baseInstallSteps,
