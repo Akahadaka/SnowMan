@@ -1,15 +1,10 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
-import { buildCandidatesForApprovedMod } from "./approved-mods.logic";
-import { executeControlledDeploy } from "./deploy-execution";
-import { launchWithManagedDeploy } from "./launcher.bridge";
-import { getModsForProfile } from "./mod.import";
-import { getProfiles } from "./profiles.persistence";
+import { getProfiles, updateProfile } from "./profiles.persistence";
 import type { Profile } from "./profile.types";
 import {
   createNamedProfile,
-  deriveLaunchContext,
   selectActiveProfile,
 } from "./profiles-page.logic";
 import {
@@ -45,18 +40,30 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
 
         @for (profile of profiles; track profile.id) {
           <div class="profile-row" [class.active-profile]="profile.id === activeProfileId">
-            <span class="profile-name">{{ profile.name }}</span>
-            @if (profile.id === activeProfileId) {
-              <span class="active-badge">Active</span>
+            @if (editingProfileId === profile.id) {
+              <input
+                class="edit-name-input"
+                type="text"
+                [(ngModel)]="editingProfileName"
+                (keydown.enter)="saveEdit()"
+                (keydown.escape)="cancelEdit()"
+              />
+              <div class="profile-actions">
+                <button type="button" class="btn-primary" (click)="saveEdit()">Save</button>
+                <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
+              </div>
+            } @else {
+              <span class="profile-name">
+                {{ profile.name }}
+                @if (profile.id === activeProfileId) {
+                  <span class="active-badge">Active</span>
+                }
+              </span>
+              <div class="profile-actions">
+                <button type="button" class="btn-primary" (click)="openProfile(profile.id)">Open</button>
+                <button type="button" class="btn-secondary" (click)="startEdit(profile)">Rename</button>
+              </div>
             }
-            <div class="profile-actions">
-              <button type="button" class="btn-primary" (click)="setActiveProfile(profile.id)">
-                Select profile
-              </button>
-              <button type="button" class="btn-secondary" (click)="openMods(profile.id)">
-                Mods
-              </button>
-            </div>
           </div>
         }
 
@@ -74,15 +81,6 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
             </button>
           </div>
           <p class="status">{{ statusMessage }}</p>
-        </div>
-
-        <div class="launch-row">
-          <button type="button" class="btn-launch-modded" (click)="launchModded()">
-            ▶ Start modded
-          </button>
-          <button type="button" class="btn-launch-vanilla" (click)="launchVanilla()">
-            ▶ Start vanilla
-          </button>
         </div>
       </div>
     </div>
@@ -181,11 +179,50 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
       border: 1px solid #4a90b8;
       border-radius: 6px;
       padding: 2px 7px;
+      margin-left: 8px;
+    }
+
+    .edit-name-input {
+      flex: 1;
+      border: 1px solid #4a90b8;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.9);
+      outline: none;
     }
 
     .profile-actions {
       display: flex;
       gap: 8px;
+    }
+
+    .selection-summary {
+      max-width: 780px;
+      padding: 18px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(74, 144, 184, 0.3);
+      background: rgba(74, 144, 184, 0.08);
+      display: grid;
+      gap: 6px;
+    }
+
+    .selection-summary strong {
+      font-size: 1.15rem;
+      color: #1a2f38;
+    }
+
+    .selection-summary p {
+      margin: 0 0 4px;
+      color: #4e6771;
+    }
+
+    .summary-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #4a90b8;
+      font-weight: 700;
     }
 
     .btn-primary {
@@ -237,35 +274,6 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
       min-height: 18px;
     }
 
-    .launch-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .btn-launch-modded {
-      background: #1a2f38;
-      color: #eff8fb;
-      border: none;
-      border-radius: 10px;
-      padding: 11px 22px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-launch-modded:hover { background: #2a4252; }
-
-    .btn-launch-vanilla {
-      background: rgba(255, 255, 255, 0.9);
-      color: #1a2f38;
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 11px 22px;
-      font-size: 0.95rem;
-      cursor: pointer;
-    }
-
     @media (prefers-color-scheme: dark) {
       .back-bar {
         background: rgba(239, 248, 251, 0.04);
@@ -284,8 +292,11 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
         background: rgba(74, 144, 184, 0.1);
       }
 
-      .profile-name { color: #d3e7ee; }
-      .hint { color: #8aacb8; }
+      .profile-name,
+      .selection-summary strong { color: #d3e7ee; }
+
+      .hint,
+      .selection-summary p { color: #8aacb8; }
 
       .btn-secondary {
         border-color: rgba(239, 248, 251, 0.2);
@@ -293,15 +304,15 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
         color: #d3e7ee;
       }
 
-      input[type="text"] {
-        border-color: rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.76);
-        color: #eff8fb;
+      .selection-summary {
+        border-color: rgba(74, 144, 184, 0.45);
+        background: rgba(74, 144, 184, 0.12);
       }
 
-      .btn-launch-vanilla {
+      input[type="text"],
+      .edit-name-input {
         border-color: rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.52);
+        background: rgba(8, 19, 24, 0.76);
         color: #eff8fb;
       }
     }
@@ -313,6 +324,8 @@ export class ProfilesPageComponent {
   activeProfileId: string | null = null;
   newProfileName = "";
   statusMessage = "";
+  editingProfileId: string | null = null;
+  editingProfileName = "";
 
   get gameLabel(): string {
     return GAME_OPTIONS.find((g) => g.id === this.settings.selectedGameId)?.label ?? this.settings.selectedGameId;
@@ -320,6 +333,10 @@ export class ProfilesPageComponent {
 
   get storeLabel(): string {
     return STORE_OPTIONS.find((s) => s.id === this.settings.selectedStoreId)?.label ?? this.settings.selectedStoreId;
+  }
+
+  get activeProfileName(): string {
+    return this.profiles.find((profile) => profile.id === this.activeProfileId)?.name ?? "";
   }
 
   private readonly storage: StorageLike;
@@ -334,7 +351,16 @@ export class ProfilesPageComponent {
     void this.router.navigate(["/game-select"]);
   }
 
-  openMods(_profileId: string): void {
+  openProfile(profileId: string): void {
+    if (!profileId) {
+      this.statusMessage = "Select a profile first.";
+      return;
+    }
+
+    if (profileId !== this.activeProfileId) {
+      this.setActiveProfile(profileId, false);
+    }
+
     void this.router.navigate(["/mods"]);
   }
 
@@ -358,7 +384,37 @@ export class ProfilesPageComponent {
     this.refreshProfiles();
   }
 
-  setActiveProfile(profileId: string): void {
+  startEdit(profile: Profile): void {
+    this.editingProfileId = profile.id;
+    this.editingProfileName = profile.name;
+  }
+
+  saveEdit(): void {
+    const id = this.editingProfileId;
+    const name = this.editingProfileName.trim();
+    if (!id || !name) {
+      this.cancelEdit();
+      return;
+    }
+    this.settings = updateProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      id,
+      { name },
+    );
+    saveSettings(this.storage, this.settings);
+    this.editingProfileId = null;
+    this.editingProfileName = "";
+    this.refreshProfiles();
+  }
+
+  cancelEdit(): void {
+    this.editingProfileId = null;
+    this.editingProfileName = "";
+  }
+
+  setActiveProfile(profileId: string, updateMessage = true): void {
     this.settings = selectActiveProfile(
       this.settings,
       this.settings.selectedStoreId,
@@ -366,74 +422,10 @@ export class ProfilesPageComponent {
       profileId,
     );
     saveSettings(this.storage, this.settings);
-    this.statusMessage = "Active profile updated.";
+    if (updateMessage) {
+      this.statusMessage = "Active profile updated.";
+    }
     this.refreshProfiles();
-  }
-
-  async launchModded(): Promise<void> {
-    await this.launchFromActiveProfile(true);
-  }
-
-  async launchVanilla(): Promise<void> {
-    await this.launchFromActiveProfile(false);
-  }
-
-  private async launchFromActiveProfile(withMods: boolean): Promise<void> {
-    const launchContext = deriveLaunchContext(
-      this.settings,
-      this.settings.selectedStoreId,
-      this.settings.selectedGameId,
-    );
-
-    if (!launchContext.canLaunch || !launchContext.executablePath) {
-      this.statusMessage = launchContext.reason ?? "Launch blocked by profile context.";
-      return;
-    }
-
-    const installPath =
-      this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
-        ?.installPath ?? "";
-
-    if (!withMods) {
-      const launched = await launchWithManagedDeploy(
-        launchContext.executablePath,
-        installPath,
-        [],
-        [],
-      );
-      this.statusMessage = launched ? "Game launched (vanilla)." : "Failed to launch game executable.";
-      return;
-    }
-
-    const profileId = launchContext.activeProfileId;
-    const mods = profileId
-      ? Object.values(
-          getModsForProfile(
-            this.settings,
-            this.settings.selectedStoreId,
-            this.settings.selectedGameId,
-            profileId,
-          ),
-        )
-      : [];
-
-    const candidates = mods.flatMap((mod) => buildCandidatesForApprovedMod(mod));
-    const deployResult = executeControlledDeploy(candidates, new Date().toISOString());
-
-    if (deployResult.status === "blocked") {
-      this.statusMessage = "Launch blocked: mod deploy preflight failed.";
-      return;
-    }
-
-    const launched = await launchWithManagedDeploy(
-      launchContext.executablePath,
-      installPath,
-      deployResult.plannedBackups,
-      deployResult.plannedCopies,
-    );
-    this.statusMessage = launched
-      ? "Game launched. Mods deployed; backups will be restored when the game exits."
-      : "Failed to launch game executable.";
   }
 
   private refreshProfiles(): void {

@@ -1,8 +1,31 @@
 <main class="shell">
   <aside class="sidebar">
-    <div class="brand-block">
-      <p class="eyebrow">SnowRunner Mod Manager</p>
-      <h1>{{ title }}</h1>
+    <div class="sidebar-top">
+      <div class="brand-block">
+        <p class="eyebrow">SnowRunner Mod Manager</p>
+        <h1>{{ shellTitle }}</h1>
+      </div>
+
+      @if (hasActiveProfile) {
+        <section class="shell-profile-panel" aria-label="Selected profile actions">
+          <div class="shell-profile-copy">
+            <span class="shell-profile-label">Active profile</span>
+            <p class="shell-profile-summary">{{ activeProfileSummary }}</p>
+            @if (shellStatusMessage) {
+              <p class="shell-status">{{ shellStatusMessage }}</p>
+            }
+          </div>
+
+          <div class="shell-actions">
+            <button type="button" class="shell-launch-btn" (click)="launchModded()">
+              ▶ Start modded
+            </button>
+            <button type="button" class="shell-secondary-btn" (click)="launchVanilla()">
+              ▶ Start vanilla
+            </button>
+          </div>
+        </section>
+      }
     </div>
 
     <nav class="nav" aria-label="Primary">

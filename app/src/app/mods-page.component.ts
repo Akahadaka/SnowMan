@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
 import { APPROVED_MODS, getApprovedMod } from "./approved-mods.catalog";
-import { toDownloadedModPath } from "./approved-mods.logic";
 import { ACTIVE_GAME_ID, ACTIVE_STORE_ID } from "./game-context";
+import { toDownloadedModPath } from "./approved-mods.logic";
 import {
   loadProfileSelections,
   saveProfileSelection,
@@ -30,7 +30,7 @@ type ModsTab = "installed" | "online";
     <div class="mods-page">
       <header class="page-header">
         <h1>Mods</h1>
-        <p>{{ activeProfileLabel }}</p>
+        <p>{{ activeProfileName ? 'Managing selected profile' : 'Choose a profile to continue' }}</p>
       </header>
 
       <div class="toolbar">
@@ -378,6 +378,10 @@ export class ModsPageComponent {
   get activeProfileLabel(): string {
     const profile = this.profiles.find((p) => p.id === this.activeProfileId);
     return profile ? `Profile: ${profile.name}` : "No active profile selected";
+  }
+
+  get activeProfileName(): string {
+    return this.profiles.find((p) => p.id === this.activeProfileId)?.name ?? "";
   }
 
   get installedMods(): ModEntry[] {
