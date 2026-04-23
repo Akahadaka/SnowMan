@@ -1,5 +1,6 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import {
   getInstallPathForStore,
   loadSettings,
@@ -29,33 +30,20 @@ import {
   standalone: true,
   imports: [FormsModule],
   template: `
-    <section class="page">
-      <p class="eyebrow">Settings</p>
-      <h2>Application Settings</h2>
-      <p>Persist baseline settings now so future iterations can build on stable state.</p>
+    <div class="settings-page">
+      <header class="page-header">
+        <h1>Settings</h1>
+      </header>
 
-      <div class="context-panel" aria-label="Active game context">
-        <h3>Active Context</h3>
-        <p>Select Store then Game before editing settings.</p>
-        <div class="context-grid">
-          <label for="storeId">Store</label>
-          <select id="storeId" name="storeId" [ngModel]="settings.selectedStoreId" disabled>
-            @for (option of storeOptions; track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          </select>
-
-          <label for="gameId">Game</label>
-          <select id="gameId" name="gameId" [ngModel]="settings.selectedGameId" disabled>
-            @for (option of gameOptions; track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          </select>
-        </div>
+      <div class="context-bar">
+        <span class="context-label">{{ gameLabel }} &mdash; {{ storeLabel }}</span>
+        <button type="button" class="change-btn" (click)="changeGameOrStore()">
+          Change game / store
+        </button>
       </div>
 
       <form class="settings-form" (ngSubmit)="save()">
-        <label for="gameInstallPath">Install Path (Active Game)</label>
+        <label for="gameInstallPath">Install Path</label>
         <div class="path-row">
           <input
             id="gameInstallPath"
@@ -73,47 +61,57 @@ import {
         </label>
 
         <div class="actions">
-          <button type="submit">Save Settings</button>
+          <button type="submit" class="btn-primary">Save Settings</button>
           <span class="save-status" [class.visible]="saveState === 'saved'">Saved</span>
         </div>
       </form>
-    </section>
+    </div>
   `,
   styles: `
-    .settings-form {
-      margin-top: 16px;
-      display: grid;
-      gap: 12px;
-      max-width: 760px;
+    .settings-page { display: flex; flex-direction: column; height: 100%; }
+
+    .page-header {
+      background: #4a90b8;
+      padding: 28px 32px 24px;
+      color: #fff;
     }
 
-    .context-panel {
-      margin-top: 14px;
-      padding: 14px;
-      border: 1px solid rgba(16, 33, 43, 0.16);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.72);
-      max-width: 760px;
-    }
+    .page-header h1 { margin: 0; font-size: 1.8rem; font-weight: 700; }
 
-    .context-panel h3 {
-      margin: 0 0 4px;
-      font-size: 1rem;
-      color: #1a2f38;
-    }
-
-    .context-panel p {
-      margin: 0 0 10px;
-      color: #4e6771;
-      font-size: 0.9rem;
-    }
-
-    .context-grid {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 8px 10px;
+    .context-bar {
+      display: flex;
       align-items: center;
-      max-width: 560px;
+      gap: 16px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.55);
+      border-bottom: 1px solid rgba(16, 33, 43, 0.1);
+    }
+
+    .context-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1a2f38;
+      flex: 1;
+    }
+
+    .change-btn {
+      background: none;
+      border: 1px solid rgba(16, 33, 43, 0.25);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      color: #4a90b8;
+      font-weight: 600;
+    }
+
+    .change-btn:hover { background: rgba(74, 144, 184, 0.06); }
+
+    .settings-form {
+      padding: 24px;
+      display: grid;
+      gap: 14px;
+      max-width: 680px;
     }
 
     label {
@@ -121,20 +119,13 @@ import {
       color: #314952;
     }
 
-    input[type="text"],
-    select {
+    input[type="text"] {
       border: 1px solid rgba(16, 33, 43, 0.2);
       border-radius: 10px;
       padding: 10px 12px;
       font-size: 0.95rem;
       background: rgba(255, 255, 255, 0.9);
       width: 100%;
-    }
-
-    select:disabled {
-      color: #49616b;
-      background: rgba(245, 248, 250, 0.95);
-      cursor: not-allowed;
     }
 
     .path-row {
@@ -169,6 +160,19 @@ import {
       gap: 12px;
     }
 
+    .btn-primary {
+      background: #4a90b8;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover { background: #3a7da6; }
+
     .save-status {
       opacity: 0;
       color: #127255;
@@ -176,35 +180,27 @@ import {
       transition: opacity 0.15s ease;
     }
 
-    .save-status.visible {
-      opacity: 1;
-    }
+    .save-status.visible { opacity: 1; }
 
     @media (prefers-color-scheme: dark) {
-      label {
-        color: #d3e7ee;
+      .context-bar {
+        background: rgba(8, 19, 24, 0.45);
+        border-color: rgba(239, 248, 251, 0.1);
       }
 
-      .context-panel {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.52);
+      .context-label { color: #d3e7ee; }
+
+      .change-btn {
+        border-color: rgba(239, 248, 251, 0.24);
+        color: #7bbfe0;
       }
 
-      .context-panel h3,
-      .context-panel p {
-        color: #d3e7ee;
-      }
+      label { color: #d3e7ee; }
 
-      input[type="text"],
-      select {
+      input[type="text"] {
         border: 1px solid rgba(239, 248, 251, 0.2);
         background: rgba(8, 19, 24, 0.76);
         color: #eff8fb;
-      }
-
-      select:disabled {
-        color: #b8ced6;
-        background: rgba(7, 17, 22, 0.72);
       }
 
       .secondary {
@@ -225,7 +221,7 @@ export class SettingsPageComponent {
   private readonly storage: StorageLike;
   settings: AppSettings;
 
-  constructor() {
+  constructor(private readonly router: Router) {
     this.storage = this.resolveStorage();
     const loaded = loadSettings(this.storage);
     this.settings = mergeSettings(
@@ -237,6 +233,18 @@ export class SettingsPageComponent {
     );
     saveSettings(this.storage, this.settings);
     this.form = createInitialSettingsForm(this.settings);
+  }
+
+  get gameLabel(): string {
+    return GAME_OPTIONS.find((g) => g.id === this.settings.selectedGameId)?.label ?? this.settings.selectedGameId;
+  }
+
+  get storeLabel(): string {
+    return STORE_OPTIONS.find((s) => s.id === this.settings.selectedStoreId)?.label ?? this.settings.selectedStoreId;
+  }
+
+  changeGameOrStore(): void {
+    void this.router.navigate(["/game-select"]);
   }
 
   save(): void {

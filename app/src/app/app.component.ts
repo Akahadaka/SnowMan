@@ -1,8 +1,9 @@
-import { Component } from "@angular/core";
-import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
-import { fetchPing, getAppTitle } from "./ping.bridge";
+import { Component, OnInit } from "@angular/core";
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
+import { getAppTitle } from "./ping.bridge";
 import { shellNavigationItems } from "./shell.navigation";
-import { tauriInvoke, type TauriInvokeFn } from "./tauri.bridge";
+import { loadSettings } from "./settings.persistence";
+import { resolveStartupRoute } from "./startup.routing";
 
 @Component({
   selector: "app-root",
@@ -10,12 +11,18 @@ import { tauriInvoke, type TauriInvokeFn } from "./tauri.bridge";
   templateUrl: "./app.component.html",
   styleUrl: "./app.component.css",
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = getAppTitle();
   navigationItems = shellNavigationItems;
-  greetingMessage = "";
 
-  async ping(invokeFn: TauriInvokeFn = tauriInvoke): Promise<void> {
-    this.greetingMessage = await fetchPing(invokeFn);
+  constructor(private readonly router: Router) {}
+
+  ngOnInit(): void {
+    const settings = loadSettings(typeof localStorage !== "undefined" ? localStorage : {
+      getItem: () => null,
+      setItem: () => undefined,
+    });
+    const target = resolveStartupRoute(settings);
+    void this.router.navigate([target]);
   }
 }

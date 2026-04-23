@@ -58,10 +58,11 @@ Build a safe, profile-based SnowRunner mod manager for Windows first, with archi
 - Iteration 07: Controlled deploy/launch/restore
 - Iteration 08: Profile create and launch flow
 - Iteration 09: Local mod import and metadata
-- Iteration 10: mod.io catalog browse/search
-- Iteration 11: mod.io auth and install flow
-- Iteration 12: Deployment planner + conflict checks
-- Iteration 13: Release hardening and packaging
+- Iteration 10: Guided onboarding flow
+- Iteration 11: mod.io catalog browse/search
+- Iteration 12: mod.io auth and install flow
+- Iteration 13: Deployment planner + conflict checks
+- Iteration 14: Release hardening and packaging
 
 ## Planning File Conventions
 - `plan/overview.md`: master direction and governance

@@ -1,5 +1,6 @@
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import { buildCandidatesForApprovedMod } from "./approved-mods.logic";
 import { executeControlledDeploy } from "./deploy-execution";
 import { launchWithManagedDeploy } from "./launcher.bridge";
@@ -13,153 +14,206 @@ import {
 } from "./profiles-page.logic";
 import {
   loadSettings,
-  mergeSettings,
   saveSettings,
   type AppSettings,
   type StorageLike,
 } from "./settings.persistence";
-import {
-  ACTIVE_GAME_ID,
-  ACTIVE_STORE_ID,
-  GAME_OPTIONS,
-  STORE_OPTIONS,
-  type GameOption,
-  type StoreOption,
-} from "./game-context";
+import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
 
 @Component({
   selector: "app-profiles-page",
   standalone: true,
   imports: [FormsModule],
   template: `
-    <section class="page">
-      <p class="eyebrow">Profiles</p>
-      <h2>Profile Management</h2>
+    <div class="profile-page">
+      <header class="page-header">
+        <h1>Profile selection</h1>
+        <p>Profiles help to organise mods easily</p>
+      </header>
 
-      <div class="context-panel" aria-label="Active game context">
-        <h3>Active Context</h3>
-        <p>Select Store then Game before editing profiles.</p>
-        <div class="context-grid">
-          <label for="profilesStoreId">Store</label>
-          <select
-            id="profilesStoreId"
-            name="profilesStoreId"
-            [ngModel]="settings.selectedStoreId"
-            disabled
-          >
-            @for (option of storeOptions; track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          </select>
-
-          <label for="profilesGameId">Game</label>
-          <select
-            id="profilesGameId"
-            name="profilesGameId"
-            [ngModel]="settings.selectedGameId"
-            disabled
-          >
-            @for (option of gameOptions; track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          </select>
-        </div>
-      </div>
-
-      <div class="actions-panel">
-        <label for="profileName">New Profile Name</label>
-        <div class="create-row">
-          <input
-            id="profileName"
-            name="profileName"
-            type="text"
-            [(ngModel)]="newProfileName"
-            placeholder="e.g. Vanilla Safe"
-          />
-          <button type="button" (click)="createProfile()">Create Profile</button>
-        </div>
-        <p class="status">{{ statusMessage }}</p>
-      </div>
-
-      <p class="summary">Profiles in active context: {{ profiles.length }}</p>
-
-      @if (profiles.length > 0) {
-        <ul class="profiles-list">
-          @for (profile of profiles; track profile.id) {
-            <li>
-              <label class="profile-row">
-                <input
-                  type="radio"
-                  name="activeProfile"
-                  [checked]="profile.id === activeProfileId"
-                  (change)="setActiveProfile(profile.id)"
-                />
-                <span>{{ profile.name }}</span>
-              </label>
-            </li>
-          }
-        </ul>
-      }
-
-      <div class="launch-row">
-        <button type="button" (click)="launchFromActiveProfile()">
-          Launch From Active Profile
+      <div class="back-bar">
+        <button type="button" class="back-link" (click)="backToGameSelect()">
+          ← Back to game selection
         </button>
+        <span class="context-tag">{{ gameLabel }} · {{ storeLabel }}</span>
       </div>
-    </section>
+
+      <div class="profile-workspace">
+        @if (profiles.length === 0) {
+          <p class="hint">No profiles yet. Create one below to get started.</p>
+        }
+
+        @for (profile of profiles; track profile.id) {
+          <div class="profile-row" [class.active-profile]="profile.id === activeProfileId">
+            <span class="profile-name">{{ profile.name }}</span>
+            @if (profile.id === activeProfileId) {
+              <span class="active-badge">Active</span>
+            }
+            <div class="profile-actions">
+              <button type="button" class="btn-primary" (click)="setActiveProfile(profile.id)">
+                Select profile
+              </button>
+              <button type="button" class="btn-secondary" (click)="openMods(profile.id)">
+                Mods
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="create-section">
+          <div class="create-row">
+            <input
+              id="profileName"
+              name="profileName"
+              type="text"
+              [(ngModel)]="newProfileName"
+              placeholder="New profile name…"
+            />
+            <button type="button" class="btn-primary" (click)="createProfile()">
+              Create new
+            </button>
+          </div>
+          <p class="status">{{ statusMessage }}</p>
+        </div>
+
+        <div class="launch-row">
+          <button type="button" class="btn-launch-modded" (click)="launchModded()">
+            ▶ Start modded
+          </button>
+          <button type="button" class="btn-launch-vanilla" (click)="launchVanilla()">
+            ▶ Start vanilla
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: `
-    .context-panel {
-      margin-top: 14px;
-      margin-bottom: 12px;
-      padding: 14px;
-      border: 1px solid rgba(16, 33, 43, 0.16);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.72);
-      max-width: 760px;
+    .profile-page {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
-    .context-panel h3 {
+    .page-header {
+      background: #4a90b8;
+      padding: 28px 32px 24px;
+      color: #fff;
+    }
+
+    .page-header h1 {
       margin: 0 0 4px;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      margin: 0;
+      font-size: 1rem;
+      opacity: 0.88;
+    }
+
+    .back-bar {
+      background: rgba(16, 33, 43, 0.07);
+      padding: 10px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid rgba(16, 33, 43, 0.1);
+    }
+
+    .back-link {
+      background: none;
+      border: none;
+      color: #4a90b8;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .back-link:hover { text-decoration: underline; }
+
+    .context-tag {
+      font-size: 0.85rem;
+      color: #4e6771;
+    }
+
+    .profile-workspace {
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hint {
+      color: #4e6771;
+      font-size: 0.95rem;
+    }
+
+    .profile-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid rgba(16, 33, 43, 0.12);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.72);
+      max-width: 780px;
+    }
+
+    .profile-row.active-profile {
+      border-color: #4a90b8;
+      background: rgba(74, 144, 184, 0.06);
+    }
+
+    .profile-name {
+      font-weight: 600;
       font-size: 1rem;
       color: #1a2f38;
+      flex: 1;
     }
 
-    .context-panel p {
-      margin: 0 0 10px;
-      color: #4e6771;
-      font-size: 0.9rem;
+    .active-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #4a90b8;
+      border: 1px solid #4a90b8;
+      border-radius: 6px;
+      padding: 2px 7px;
     }
 
-    .context-grid {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 8px 10px;
-      align-items: center;
-      max-width: 560px;
-    }
-
-    label {
-      font-weight: 600;
-      color: #314952;
-    }
-
-    select {
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
-      background: rgba(255, 255, 255, 0.9);
-      width: 100%;
-      color: #49616b;
-      cursor: not-allowed;
-    }
-
-    .actions-panel {
-      margin-top: 12px;
-      max-width: 760px;
-      display: grid;
+    .profile-actions {
+      display: flex;
       gap: 8px;
+    }
+
+    .btn-primary {
+      background: #4a90b8;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover { background: #3a7da6; }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.9);
+      color: #1a2f38;
+      border: 1px solid rgba(16, 33, 43, 0.2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .create-section {
+      max-width: 780px;
+      margin-top: 4px;
     }
 
     .create-row {
@@ -168,118 +222,120 @@ import {
     }
 
     input[type="text"] {
+      flex: 1;
       border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 10px 12px;
       font-size: 0.95rem;
       background: rgba(255, 255, 255, 0.9);
-      width: 100%;
-    }
-
-    button {
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 0 12px;
-      font-weight: 600;
-      background: #1a2f38;
-      color: #eff8fb;
-      cursor: pointer;
-    }
-
-    .summary {
-      margin-top: 10px;
-      font-weight: 600;
-      color: #314952;
     }
 
     .status {
-      margin: 0;
+      margin: 8px 0 0;
       color: #4e6771;
-      font-size: 0.9rem;
-      min-height: 20px;
-    }
-
-    .profiles-list {
-      list-style: none;
-      padding: 0;
-      margin: 8px 0;
-      max-width: 760px;
-      display: grid;
-      gap: 6px;
-    }
-
-    .profile-row {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-      color: #314952;
+      font-size: 0.88rem;
+      min-height: 18px;
     }
 
     .launch-row {
-      margin-top: 10px;
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-launch-modded {
+      background: #1a2f38;
+      color: #eff8fb;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-launch-modded:hover { background: #2a4252; }
+
+    .btn-launch-vanilla {
+      background: rgba(255, 255, 255, 0.9);
+      color: #1a2f38;
+      border: 1px solid rgba(16, 33, 43, 0.2);
+      border-radius: 10px;
+      padding: 11px 22px;
+      font-size: 0.95rem;
+      cursor: pointer;
     }
 
     @media (prefers-color-scheme: dark) {
-      .context-panel {
-        border: 1px solid rgba(239, 248, 251, 0.2);
+      .back-bar {
+        background: rgba(239, 248, 251, 0.04);
+        border-color: rgba(239, 248, 251, 0.1);
+      }
+
+      .context-tag { color: #8aacb8; }
+
+      .profile-row {
+        border-color: rgba(239, 248, 251, 0.12);
         background: rgba(8, 19, 24, 0.52);
       }
 
-      .profile-row,
-      .context-panel h3,
-      .context-panel p,
-      .summary,
-      .status,
-      label {
+      .profile-row.active-profile {
+        border-color: #4a90b8;
+        background: rgba(74, 144, 184, 0.1);
+      }
+
+      .profile-name { color: #d3e7ee; }
+      .hint { color: #8aacb8; }
+
+      .btn-secondary {
+        border-color: rgba(239, 248, 251, 0.2);
+        background: rgba(8, 19, 24, 0.5);
         color: #d3e7ee;
       }
 
-      select {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(7, 17, 22, 0.72);
-        color: #b8ced6;
-      }
-
       input[type="text"] {
-        border: 1px solid rgba(239, 248, 251, 0.2);
+        border-color: rgba(239, 248, 251, 0.2);
         background: rgba(8, 19, 24, 0.76);
         color: #eff8fb;
       }
 
-      button {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(11, 33, 44, 0.92);
+      .btn-launch-vanilla {
+        border-color: rgba(239, 248, 251, 0.2);
+        background: rgba(8, 19, 24, 0.52);
         color: #eff8fb;
       }
     }
   `,
 })
 export class ProfilesPageComponent {
-  readonly storeOptions: ReadonlyArray<StoreOption> = STORE_OPTIONS;
-  readonly gameOptions: ReadonlyArray<GameOption> = GAME_OPTIONS;
-
   settings: AppSettings;
   profiles: Profile[] = [];
   activeProfileId: string | null = null;
   newProfileName = "";
   statusMessage = "";
 
+  get gameLabel(): string {
+    return GAME_OPTIONS.find((g) => g.id === this.settings.selectedGameId)?.label ?? this.settings.selectedGameId;
+  }
+
+  get storeLabel(): string {
+    return STORE_OPTIONS.find((s) => s.id === this.settings.selectedStoreId)?.label ?? this.settings.selectedStoreId;
+  }
+
   private readonly storage: StorageLike;
 
-  constructor() {
+  constructor(private readonly router: Router) {
     this.storage = this.resolveStorage();
-    const loaded = loadSettings(this.storage);
-    this.settings = mergeSettings(
-      {
-        selectedStoreId: ACTIVE_STORE_ID,
-        selectedGameId: ACTIVE_GAME_ID,
-      },
-      loaded,
-    );
-    saveSettings(this.storage, this.settings);
-
+    this.settings = loadSettings(this.storage);
     this.refreshProfiles();
+  }
+
+  backToGameSelect(): void {
+    void this.router.navigate(["/game-select"]);
+  }
+
+  openMods(_profileId: string): void {
+    void this.router.navigate(["/mods"]);
   }
 
   createProfile(): void {
@@ -314,7 +370,15 @@ export class ProfilesPageComponent {
     this.refreshProfiles();
   }
 
-  async launchFromActiveProfile(): Promise<void> {
+  async launchModded(): Promise<void> {
+    await this.launchFromActiveProfile(true);
+  }
+
+  async launchVanilla(): Promise<void> {
+    await this.launchFromActiveProfile(false);
+  }
+
+  private async launchFromActiveProfile(withMods: boolean): Promise<void> {
     const launchContext = deriveLaunchContext(
       this.settings,
       this.settings.selectedStoreId,
@@ -329,6 +393,17 @@ export class ProfilesPageComponent {
     const installPath =
       this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
         ?.installPath ?? "";
+
+    if (!withMods) {
+      const launched = await launchWithManagedDeploy(
+        launchContext.executablePath,
+        installPath,
+        [],
+        [],
+      );
+      this.statusMessage = launched ? "Game launched (vanilla)." : "Failed to launch game executable.";
+      return;
+    }
 
     const profileId = launchContext.activeProfileId;
     const mods = profileId

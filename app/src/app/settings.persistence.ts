@@ -25,6 +25,7 @@ export interface AppSettings {
   selectedGameId: GameId;
   selectedStoreId: StoreId;
   autoBackupOnDeploy: boolean;
+  onboardingComplete: boolean;
   stores: StoresSettingsMap;
 }
 
@@ -32,6 +33,7 @@ export interface SettingsPatch {
   selectedGameId?: GameId;
   selectedStoreId?: StoreId;
   autoBackupOnDeploy?: boolean;
+  onboardingComplete?: boolean;
   stores?: Partial<
     Record<StoreId, { games?: Partial<Record<GameId, Partial<StoreGameSettings>>> }>
   >;
@@ -43,6 +45,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedGameId: SNOWRUNNER_GAME_ID,
   selectedStoreId: STEAM_STORE_ID,
   autoBackupOnDeploy: true,
+  onboardingComplete: false,
   stores: {},
 };
 
@@ -114,6 +117,7 @@ export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSetti
     selectedGameId: patch.selectedGameId ?? base.selectedGameId,
     selectedStoreId: patch.selectedStoreId ?? base.selectedStoreId,
     autoBackupOnDeploy: patch.autoBackupOnDeploy ?? base.autoBackupOnDeploy,
+    onboardingComplete: patch.onboardingComplete ?? base.onboardingComplete,
     stores: mergedStores,
   };
 }

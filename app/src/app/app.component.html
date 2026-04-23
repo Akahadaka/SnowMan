@@ -3,7 +3,6 @@
     <div class="brand-block">
       <p class="eyebrow">SnowRunner Mod Manager</p>
       <h1>{{ title }}</h1>
-      <p class="brand-copy">A safe desktop workspace for profiles, mods, and diagnostics.</p>
     </div>
 
     <nav class="nav" aria-label="Primary">
@@ -21,18 +20,6 @@
   </aside>
 
   <section class="content">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Iteration 01</p>
-        <h2>App Shell</h2>
-      </div>
-
-      <div class="ping-box">
-        <button type="button" (click)="ping()">Ping backend</button>
-        <p>{{ greetingMessage || "Waiting for backend check" }}</p>
-      </div>
-    </header>
-
     <router-outlet />
   </section>
 </main>

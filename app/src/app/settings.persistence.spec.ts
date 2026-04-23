@@ -53,6 +53,7 @@ describe("settings persistence", () => {
       selectedGameId: SNOWRUNNER_GAME_ID,
       selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: false,
+      onboardingComplete: false,
       stores: {
         steam: {
           games: {
