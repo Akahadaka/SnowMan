@@ -1,8 +1,11 @@
+import type { InstallStrategy } from "./mod.types";
+
 export interface DeployCandidate {
   modId: string;
   sourcePath: string;
   relativeTargetPath: string;
   targetExists: boolean;
+  installStrategy?: InstallStrategy;
 }
 
 export interface PlannedCopyOperation {
@@ -10,6 +13,7 @@ export interface PlannedCopyOperation {
   sourcePath: string;
   targetPath: string;
   needsBackup: boolean;
+  installStrategy: InstallStrategy;
 }
 
 export interface PlannedBackupOperation {

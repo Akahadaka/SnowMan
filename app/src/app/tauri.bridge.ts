@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { InstallStrategy } from "./mod.types";
 
 /**
  * Maps every Tauri command name to its return type.
@@ -27,7 +28,7 @@ export interface CommandArgsMap {
     executablePath: string;
     installRootPath: string;
     backups: Array<{ targetPath: string; backupPath: string }>;
-    copies: Array<{ sourcePath: string; targetPath: string }>;
+    copies: Array<{ sourcePath: string; targetPath: string; installStrategy: InstallStrategy }>;
   };
 }
 

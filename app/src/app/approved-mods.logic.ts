@@ -1,6 +1,6 @@
 import { getApprovedMod } from "./approved-mods.catalog";
 import { buildDeployCandidates } from "./mod.import";
-import type { ModEntry } from "./mod.types";
+import type { ApprovedModDefinition, ApprovedModInstallStep, ModEntry } from "./mod.types";
 import type { DeployCandidate } from "./safety-dry-run.types";
 
 function normalizePath(path: string): string {
@@ -21,32 +21,42 @@ export function buildCandidatesForApprovedMod(modEntry: ModEntry): DeployCandida
     return [];
   }
 
-  const files: string[] = [...approved.baseSourceRelativePaths];
+  return buildCandidatesForApprovedDefinition(modEntry, approved);
+}
+
+export function buildCandidatesForApprovedDefinition(
+  modEntry: ModEntry,
+  approved: ApprovedModDefinition,
+): DeployCandidate[] {
 
   const selected = modEntry.selectedOptions ?? {};
-  for (const option of approved.options) {
-    if (selected[option.id]) {
-      files.push(option.sourceRelativePath);
-    }
-  }
+  const installSteps: ApprovedModInstallStep[] = [
+    ...approved.baseInstallSteps,
+    ...approved.options
+      .filter((option) => Boolean(selected[option.id]))
+      .map((option) => ({
+        sourceRelativePath: option.sourceRelativePath,
+        relativeTargetPath: option.relativeTargetPath,
+        installStrategy: option.installStrategy,
+      })),
+  ];
+
+  const files = installSteps.map((step) => step.sourceRelativePath);
 
   // Build candidates with source paths under extracted folder.
   const bySource = buildDeployCandidates(modEntry, "", files, () => true);
 
   // Override relative targets from curated recipe (base + selected options).
-  const targetMap = new Map<string, string>();
-  for (const sourceRelativePath of approved.baseSourceRelativePaths) {
-    targetMap.set(sourceRelativePath, approved.archiveTargetPath);
-  }
-  for (const option of approved.options) {
-    if (selected[option.id]) {
-      targetMap.set(option.sourceRelativePath, option.relativeTargetPath);
-    }
+  const stepMap = new Map<string, ApprovedModInstallStep>();
+  for (const step of installSteps) {
+    stepMap.set(step.sourceRelativePath, step);
   }
 
   return bySource.map((candidate) => ({
     ...candidate,
-    relativeTargetPath: targetMap.get(candidate.relativeTargetPath) ?? candidate.relativeTargetPath,
+    relativeTargetPath:
+      stepMap.get(candidate.relativeTargetPath)?.relativeTargetPath ?? candidate.relativeTargetPath,
+    installStrategy: stepMap.get(candidate.relativeTargetPath)?.installStrategy,
     targetExists: true,
   }));
 }

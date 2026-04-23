@@ -11,8 +11,23 @@ export const APPROVED_MODS: ReadonlyArray<ApprovedModDefinition> = [
     description:
       "Manual-install mod curated by SnowMan. Downloaded and extracted into downloaded/real-life-mod.",
     // Base install always overlays these entries into initial.pak.
-    baseSourceRelativePaths: ["media", "strings", "initial.cache_block"],
-    archiveTargetPath: "en_us/preload/paks/client/initial.pak",
+    baseInstallSteps: [
+      {
+        sourceRelativePath: "media",
+        relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        installStrategy: "archive-overlay",
+      },
+      {
+        sourceRelativePath: "strings",
+        relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        installStrategy: "archive-overlay",
+      },
+      {
+        sourceRelativePath: "initial.cache_block",
+        relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        installStrategy: "archive-overlay",
+      },
+    ],
     options: [
       {
         id: "no-recovery",
@@ -20,6 +35,7 @@ export const APPROVED_MODS: ReadonlyArray<ApprovedModDefinition> = [
         description: "Optional No Recovery overlay.",
         sourceRelativePath: "options/no-recovery/media",
         relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        installStrategy: "archive-overlay",
       },
       {
         id: "gameplay-modes",
@@ -27,6 +43,7 @@ export const APPROVED_MODS: ReadonlyArray<ApprovedModDefinition> = [
         description: "Optional gameplay mode pack overlay.",
         sourceRelativePath: "options/gameplay-modes/media",
         relativeTargetPath: "en_us/preload/paks/client/initial.pak",
+        installStrategy: "archive-overlay",
       },
     ],
   },

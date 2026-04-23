@@ -8,6 +8,8 @@ export interface ModEntry {
   selectedOptions?: Record<string, boolean>;
 }
 
+export type InstallStrategy = "direct-copy" | "archive-overlay";
+
 export type ModsMap = Record<string, ModEntry>;
 
 export interface ModManifest {
@@ -27,6 +29,13 @@ export interface ApprovedModOption {
   description: string;
   sourceRelativePath: string;
   relativeTargetPath: string;
+  installStrategy: InstallStrategy;
+}
+
+export interface ApprovedModInstallStep {
+  sourceRelativePath: string;
+  relativeTargetPath: string;
+  installStrategy: InstallStrategy;
 }
 
 export interface ApprovedModDefinition {
@@ -35,7 +44,6 @@ export interface ApprovedModDefinition {
   modIoUrl: string;
   downloadUrl: string;
   description: string;
-  baseSourceRelativePaths: string[];
-  archiveTargetPath: string;
+  baseInstallSteps: ApprovedModInstallStep[];
   options: ApprovedModOption[];
 }

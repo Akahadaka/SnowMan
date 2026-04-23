@@ -73,6 +73,7 @@ export function runSafetyDryRun(candidates: DeployCandidate[]): SafetyDryRunRepo
       sourcePath: candidate.sourcePath,
       targetPath: normalizedTargetPath,
       needsBackup: candidate.targetExists,
+      installStrategy: candidate.installStrategy ?? "direct-copy",
     });
 
     if (candidate.targetExists) {

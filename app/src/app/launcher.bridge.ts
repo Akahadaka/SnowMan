@@ -28,6 +28,7 @@ export async function launchWithManagedDeploy(
       copies: copies.map((entry) => ({
         sourcePath: entry.sourcePath,
         targetPath: entry.targetPath,
+        installStrategy: entry.installStrategy,
       })),
     });
     return true;

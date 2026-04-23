@@ -38,6 +38,7 @@ struct BackupItem {
 struct CopyItem {
     source_path: String,
     target_path: String,
+    install_strategy: Option<String>,
 }
 
 fn normalize_join(root: &Path, relative: &str) -> PathBuf {
@@ -58,13 +59,6 @@ fn copy_with_parent(src: &Path, dst: &Path) -> Result<(), String> {
         )
     })?;
     Ok(())
-}
-
-fn is_pak_target(path: &Path) -> bool {
-    path.extension()
-        .and_then(|ext| ext.to_str())
-        .map(|ext| ext.eq_ignore_ascii_case("pak"))
-        .unwrap_or(false)
 }
 
 fn collect_overlay_entries(source: &Path) -> Result<BTreeMap<String, Vec<u8>>, String> {
@@ -210,6 +204,38 @@ fn apply_overlay_to_archive(target_archive: &Path, overlay_source: &Path) -> Res
     write_zip_entries(target_archive, &entries)
 }
 
+fn apply_direct_copy(source_abs: &Path, target_abs: &Path) -> Result<(), String> {
+    copy_with_parent(source_abs, target_abs)
+}
+
+fn apply_archive_overlay(source_abs: &Path, target_abs: &Path) -> Result<(), String> {
+    if target_abs
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| !ext.eq_ignore_ascii_case("pak"))
+        .unwrap_or(true)
+    {
+        return Err(format!(
+            "archive-overlay strategy requires .pak target, got '{}'",
+            target_abs.display()
+        ));
+    }
+
+    apply_overlay_to_archive(target_abs, source_abs)
+}
+
+fn apply_copy_with_strategy(
+    strategy: &str,
+    source_abs: &Path,
+    target_abs: &Path,
+) -> Result<(), String> {
+    match strategy {
+        "direct-copy" => apply_direct_copy(source_abs, target_abs),
+        "archive-overlay" => apply_archive_overlay(source_abs, target_abs),
+        other => Err(format!("Unknown install strategy '{other}'")),
+    }
+}
+
 fn clear_directory(path: &Path) -> Result<(), String> {
     if path.exists() {
         fs::remove_dir_all(path).map_err(|e| format!("Failed to clear destination folder: {e}"))?;
@@ -315,12 +341,8 @@ fn deploy_launch_restore(
     for copy in &copies {
         let source_abs = PathBuf::from(&copy.source_path);
         let target_abs = normalize_join(&install_root, &copy.target_path);
-
-        if is_pak_target(&target_abs) {
-            apply_overlay_to_archive(&target_abs, &source_abs)?;
-        } else {
-            copy_with_parent(&source_abs, &target_abs)?;
-        }
+        let strategy = copy.install_strategy.as_deref().unwrap_or("direct-copy");
+        apply_copy_with_strategy(strategy, &source_abs, &target_abs)?;
     }
 
     let mut child = std::process::Command::new(&executable_path)
