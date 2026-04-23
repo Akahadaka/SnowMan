@@ -30,6 +30,8 @@ export interface ApprovedModOption {
   sourceRelativePath: string;
   relativeTargetPath: string;
   installStrategy: InstallStrategy;
+  lockedChecked?: boolean;
+  includeInDeploy?: boolean;
 }
 
 export interface ApprovedModInstallStep {

@@ -33,6 +33,7 @@ export function buildCandidatesForApprovedDefinition(
   const installSteps: ApprovedModInstallStep[] = [
     ...approved.baseInstallSteps,
     ...approved.options
+      .filter((option) => option.includeInDeploy !== false)
       .filter((option) => Boolean(selected[option.id]))
       .map((option) => ({
         sourceRelativePath: option.sourceRelativePath,

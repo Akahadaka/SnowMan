@@ -11,6 +11,35 @@ export interface CommandMap {
   launch_game: null;
   download_and_extract_zip: string;
   deploy_launch_restore: null;
+  sync_mod_catalog: null;
+  search_mod_catalog: CatalogDbEntryRecord[];
+  upsert_profile_mod_selection: null;
+  get_profile_mod_selections: ProfileModSelectionRecord[];
+}
+
+export interface CatalogDbEntryRecord {
+  id: string;
+  name: string;
+  description: string;
+  modIoUrl: string;
+  downloadUrl: string;
+  baseInstallStepsJson: string;
+  optionsJson: string;
+}
+
+export interface CatalogDbEntryInput {
+  id: string;
+  name: string;
+  description: string;
+  modIoUrl: string;
+  downloadUrl: string;
+  baseInstallStepsJson: string;
+  optionsJson: string;
+}
+
+export interface ProfileModSelectionRecord {
+  modId: string;
+  selectedOptionsJson: string;
 }
 
 export type CommandName = keyof CommandMap;
@@ -30,6 +59,21 @@ export interface CommandArgsMap {
     backups: Array<{ targetPath: string; backupPath: string }>;
     copies: Array<{ sourcePath: string; targetPath: string; installStrategy: InstallStrategy }>;
   };
+  sync_mod_catalog: {
+    entries: CatalogDbEntryInput[];
+  };
+  search_mod_catalog: {
+    query: string;
+    limit?: number;
+  };
+  upsert_profile_mod_selection: {
+    profileId: string;
+    modId: string;
+    selectedOptionsJson: string;
+  };
+  get_profile_mod_selections: {
+    profileId: string;
+  };
 }
 
 /** Typed invoke signature constrained to registered commands and their return types. */
@@ -44,6 +88,10 @@ export const registeredCommands: ReadonlyArray<CommandName> = [
   "launch_game",
   "download_and_extract_zip",
   "deploy_launch_restore",
+  "sync_mod_catalog",
+  "search_mod_catalog",
+  "upsert_profile_mod_selection",
+  "get_profile_mod_selections",
 ] as const;
 
 /**

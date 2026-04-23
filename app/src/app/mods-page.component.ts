@@ -2,8 +2,9 @@ import { Component } from "@angular/core";
 import { APPROVED_MODS, getApprovedMod } from "./approved-mods.catalog";
 import { toDownloadedModPath } from "./approved-mods.logic";
 import { ACTIVE_GAME_ID, ACTIVE_STORE_ID } from "./game-context";
+import { loadProfileSelections, saveProfileSelection, searchCatalog, syncCatalog } from "./mod-catalog.db";
 import { addModToProfile, getModsForProfile, importModFromFolder } from "./mod.import";
-import type { ModEntry, ApprovedModDefinition } from "./mod.types";
+import type { ModEntry, ApprovedModDefinition, ApprovedModOption } from "./mod.types";
 import { downloadAndExtractZip } from "./mods.runtime.bridge";
 import { getProfiles } from "./profiles.persistence";
 import type { Profile } from "./profile.types";
@@ -22,6 +23,16 @@ import {
     <section class="page">
       <p class="eyebrow">Mods</p>
       <h2>Mod Manager</h2>
+
+      <div class="search-row">
+        <input
+          type="text"
+          name="searchQuery"
+          [value]="searchQuery"
+          (input)="onSearchInput($any($event.target).value)"
+          placeholder="Search curated mods..."
+        />
+      </div>
 
       @if (profiles.length === 0) {
         <p class="hint">Create a profile on the Profiles page first, then import mods here.</p>
@@ -43,7 +54,8 @@ import {
                     <label class="option-row">
                       <input
                         type="checkbox"
-                        [checked]="isOptionSelected(existing, option.id)"
+                        [checked]="isOptionSelected(existing, option)"
+                        [disabled]="isOptionDisabled(option)"
                         (change)="toggleOption(profile.id, approved.id, option.id, $any($event.target).checked)"
                       />
                       <span>{{ option.label }}</span>
@@ -73,6 +85,20 @@ import {
       border-radius: 12px;
       background: rgba(255, 255, 255, 0.72);
       max-width: 760px;
+    }
+
+    .search-row {
+      max-width: 760px;
+      margin: 10px 0;
+    }
+
+    .search-row input {
+      width: 100%;
+      border: 1px solid rgba(16, 33, 43, 0.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.9);
     }
 
     .profile-section h3 {
@@ -150,6 +176,12 @@ import {
         background: rgba(8, 19, 24, 0.52);
       }
 
+      .search-row input {
+        border: 1px solid rgba(239, 248, 251, 0.2);
+        background: rgba(8, 19, 24, 0.76);
+        color: #eff8fb;
+      }
+
       .profile-section h3,
       .mod-name {
         color: #d3e7ee;
@@ -174,10 +206,13 @@ import {
   `,
 })
 export class ModsPageComponent {
-  readonly approvedMods = APPROVED_MODS;
+  approvedMods: ReadonlyArray<ApprovedModDefinition> = [...APPROVED_MODS];
   settings: AppSettings;
   profiles: Profile[] = [];
   statusMessage = "";
+  searchQuery = "";
+  private profileSelectionsByProfileId: Record<string, Record<string, Record<string, boolean>>> =
+    {};
 
   private readonly storage: StorageLike;
 
@@ -189,6 +224,7 @@ export class ModsPageComponent {
       loaded,
     );
     this.refreshProfiles();
+    void this.initializeCatalog();
   }
 
   modsFor(profileId: string): ModEntry[] {
@@ -203,11 +239,40 @@ export class ModsPageComponent {
   }
 
   modByApprovedId(profileId: string, approvedModId: string): ModEntry | undefined {
-    return this.modsFor(profileId).find((entry) => entry.approvedModId === approvedModId);
+    const existing = this.modsFor(profileId).find((entry) => entry.approvedModId === approvedModId);
+    const dbSelection = this.profileSelectionsByProfileId[profileId]?.[approvedModId];
+
+    if (existing) {
+      return {
+        ...existing,
+        selectedOptions: dbSelection ?? existing.selectedOptions,
+      };
+    }
+
+    if (dbSelection) {
+      return {
+        id: approvedModId,
+        name: approvedModId,
+        sourceFolderPath: "",
+        importedAt: "",
+        approvedModId,
+        selectedOptions: dbSelection,
+      };
+    }
+
+    return undefined;
   }
 
-  isOptionSelected(mod: ModEntry, optionId: string): boolean {
-    return Boolean(mod.selectedOptions?.[optionId]);
+  isOptionSelected(mod: ModEntry, option: ApprovedModOption): boolean {
+    if (typeof mod.selectedOptions?.[option.id] === "boolean") {
+      return Boolean(mod.selectedOptions[option.id]);
+    }
+
+    return Boolean(option.lockedChecked);
+  }
+
+  isOptionDisabled(option: ApprovedModOption): boolean {
+    return Boolean(option.lockedChecked);
   }
 
   async addApprovedMod(profileId: string, approved: ApprovedModDefinition): Promise<void> {
@@ -234,7 +299,15 @@ export class ModsPageComponent {
       description: approved.description,
     });
     modEntry.approvedModId = approved.id;
-    modEntry.selectedOptions = current?.selectedOptions ?? {};
+    modEntry.selectedOptions = {
+      ...approved.options.reduce<Record<string, boolean>>((acc, option) => {
+        if (option.lockedChecked) {
+          acc[option.id] = true;
+        }
+        return acc;
+      }, {}),
+      ...(current?.selectedOptions ?? {}),
+    };
 
     this.settings = addModToProfile(
       this.settings,
@@ -245,18 +318,29 @@ export class ModsPageComponent {
     );
     saveSettings(this.storage, this.settings);
 
+    await saveProfileSelection(profileId, approved.id, modEntry.selectedOptions ?? {});
+    if (!this.profileSelectionsByProfileId[profileId]) {
+      this.profileSelectionsByProfileId[profileId] = {};
+    }
+    this.profileSelectionsByProfileId[profileId][approved.id] = modEntry.selectedOptions ?? {};
+
     this.statusMessage = `Added '${approved.name}' to profile and downloaded to downloaded/${approved.id}.`;
   }
 
-  toggleOption(
+  async toggleOption(
     profileId: string,
     approvedModId: string,
     optionId: string,
     checked: boolean,
-  ): void {
+  ): Promise<void> {
     const approved = getApprovedMod(approvedModId);
     const existing = this.modByApprovedId(profileId, approvedModId);
     if (!approved || !existing) {
+      return;
+    }
+
+    const option = approved.options.find((entry) => entry.id === optionId);
+    if (!option || option.lockedChecked) {
       return;
     }
 
@@ -276,6 +360,12 @@ export class ModsPageComponent {
       updated,
     );
     saveSettings(this.storage, this.settings);
+
+    await saveProfileSelection(profileId, approvedModId, updated.selectedOptions ?? {});
+    if (!this.profileSelectionsByProfileId[profileId]) {
+      this.profileSelectionsByProfileId[profileId] = {};
+    }
+    this.profileSelectionsByProfileId[profileId][approvedModId] = updated.selectedOptions ?? {};
   }
 
   private refreshProfiles(): void {
@@ -284,6 +374,44 @@ export class ModsPageComponent {
       this.settings.selectedStoreId,
       this.settings.selectedGameId,
     );
+
+    void this.loadProfileSelectionsForVisibleProfiles();
+  }
+
+  async onSearchChange(): Promise<void> {
+    try {
+      this.approvedMods = await searchCatalog(this.searchQuery, 200);
+    } catch {
+      // Keep existing list when DB search is unavailable.
+    }
+  }
+
+  onSearchInput(value: string): void {
+    this.searchQuery = value;
+    void this.onSearchChange();
+  }
+
+  private async initializeCatalog(): Promise<void> {
+    try {
+      await syncCatalog(APPROVED_MODS);
+      this.approvedMods = await searchCatalog("", 200);
+    } catch {
+      this.approvedMods = [...APPROVED_MODS];
+    }
+  }
+
+  private async loadProfileSelectionsForVisibleProfiles(): Promise<void> {
+    const next: Record<string, Record<string, Record<string, boolean>>> = {};
+
+    for (const profile of this.profiles) {
+      try {
+        next[profile.id] = await loadProfileSelections(profile.id);
+      } catch {
+        next[profile.id] = {};
+      }
+    }
+
+    this.profileSelectionsByProfileId = next;
   }
 
   private resolveStorage(): StorageLike {
