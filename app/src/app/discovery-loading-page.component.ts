@@ -50,32 +50,6 @@ type DiscoveryState = "searching" | "found" | "not-found";
     </section>
   `,
   styles: `
-    .onboarding {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px 24px;
-      min-height: 100%;
-    }
-
-    .onboarding-header {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .onboarding-header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 0 0 8px;
-      color: #1a2f38;
-    }
-
-    .onboarding-header p {
-      font-size: 1.05rem;
-      color: #4e6771;
-      margin: 0;
-    }
-
     .progress-track {
       width: 340px;
       height: 6px;
@@ -128,35 +102,7 @@ type DiscoveryState = "searching" | "found" | "not-found";
       justify-content: flex-end;
     }
 
-    .back-btn {
-      background: none;
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 10px 18px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      color: #4e6771;
-    }
-
-    .manual-btn {
-      background: #4a90b8;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 22px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .manual-btn:hover {
-      background: #3a7da6;
-    }
-
     @media (prefers-color-scheme: dark) {
-      .onboarding-header h1 { color: #eff8fb; }
-      .onboarding-header p { color: #8aacb8; }
-
       .progress-track { background: rgba(239, 248, 251, 0.1); }
 
       .not-found-card,
@@ -167,12 +113,6 @@ type DiscoveryState = "searching" | "found" | "not-found";
 
       .not-found-detail { color: #8aacb8; }
       .found-path { color: #4cba94; }
-
-      .back-btn {
-        border-color: rgba(239, 248, 251, 0.2);
-        color: #8aacb8;
-        background: transparent;
-      }
     }
   `,
 })

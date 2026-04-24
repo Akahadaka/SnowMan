@@ -47,32 +47,6 @@ import {
     </section>
   `,
   styles: `
-    .onboarding {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px 24px;
-      min-height: 100%;
-    }
-
-    .onboarding-header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .onboarding-header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 0 0 8px;
-      color: #1a2f38;
-    }
-
-    .onboarding-header p {
-      font-size: 1.05rem;
-      color: #4e6771;
-      margin: 0;
-    }
-
     .store-card {
       background: rgba(255, 255, 255, 0.72);
       border: 1px solid rgba(16, 33, 43, 0.14);
@@ -132,35 +106,7 @@ import {
       clip: rect(0 0 0 0);
     }
 
-    .back-btn {
-      background: none;
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 10px 18px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      color: #4e6771;
-    }
-
-    .continue-btn {
-      background: #4a90b8;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 22px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .continue-btn:hover {
-      background: #3a7da6;
-    }
-
     @media (prefers-color-scheme: dark) {
-      .onboarding-header h1 { color: #eff8fb; }
-      .onboarding-header p { color: #8aacb8; }
-
       .store-card {
         border-color: rgba(239, 248, 251, 0.15);
         background: rgba(8, 19, 24, 0.52);
@@ -174,12 +120,6 @@ import {
       .store-option.selected {
         border-color: #4a90b8;
         background: rgba(74, 144, 184, 0.12);
-      }
-
-      .back-btn {
-        border-color: rgba(239, 248, 251, 0.2);
-        color: #8aacb8;
-        background: transparent;
       }
     }
   `,

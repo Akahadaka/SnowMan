@@ -19,19 +19,13 @@
 
 @layer components {
 	.back-link,
-	.back-btn,
-	.change-btn {
+	.back-btn {
 		@apply btn btn-ghost btn-sm;
 	}
 
 	.continue-btn,
-	.manual-btn,
-	.update-all-btn {
+	.manual-btn {
 		@apply btn btn-primary;
-	}
-
-	.secondary {
-		@apply btn btn-outline;
 	}
 
 	.tab-btn {
@@ -39,7 +33,9 @@
 	}
 
 	.tab-btn.active {
-		@apply btn-info text-info-content;
+		border-color: #4a90b8;
+		color: #4a90b8;
+		background-color: rgba(74, 144, 184, 0.08);
 	}
 
 	.shell-launch-btn {
@@ -53,13 +49,185 @@
 	.nav-link {
 		@apply btn btn-ghost justify-start normal-case;
 	}
+}
 
-	.profile-row,
-	.mod-row,
-	.selection-summary,
-	.settings-card,
-	.onboarding-header,
-	.profile-spotlight {
-		@apply card bg-base-100;
+/* ── Page chrome ───────────────────────────────────── */
+.page-header {
+	padding: 28px 32px 24px;
+	background: #4a90b8;
+	color: #fff;
+}
+
+.page-header h1 {
+	margin: 0 0 4px;
+	font-size: 1.8rem;
+	font-weight: 700;
+}
+
+.page-header p {
+	margin: 0;
+	font-size: 0.95rem;
+	opacity: 0.88;
+}
+
+.back-bar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 10px 32px;
+	background: rgba(16, 33, 43, 0.07);
+	border-bottom: 1px solid rgba(16, 33, 43, 0.1);
+}
+
+.context-tag {
+	font-size: 0.85rem;
+	color: #4e6771;
+}
+
+.context-bar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 12px 24px;
+	background: rgba(255, 255, 255, 0.55);
+	border-bottom: 1px solid rgba(16, 33, 43, 0.1);
+}
+
+.context-label {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #1a2f38;
+	flex: 1;
+}
+
+.change-btn {
+	background: none;
+	border: 1px solid rgba(16, 33, 43, 0.25);
+	border-radius: 8px;
+	padding: 6px 14px;
+	font-size: 0.88rem;
+	cursor: pointer;
+	color: #4a90b8;
+	font-weight: 600;
+}
+
+.change-btn:hover {
+	background: rgba(74, 144, 184, 0.06);
+}
+
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 20px;
+	border-bottom: 1px solid rgba(16, 33, 43, 0.1);
+	background: rgba(255, 255, 255, 0.6);
+}
+
+.update-all-btn {
+	background: #4a90b8;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 8px 16px;
+	font-size: 0.9rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+/* ── Onboarding screens ────────────────────────────── */
+.onboarding {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 48px 24px;
+	min-height: 100%;
+}
+
+.onboarding-header {
+	text-align: center;
+	margin-bottom: 40px;
+}
+
+.onboarding-header h1 {
+	font-size: 2rem;
+	font-weight: 700;
+	margin: 0 0 8px;
+	color: #1a2f38;
+}
+
+.onboarding-header p {
+	font-size: 1.05rem;
+	color: #4e6771;
+	margin: 0;
+}
+
+/* ── Shared hints ──────────────────────────────────── */
+.hint {
+	color: #4e6771;
+	font-size: 0.95rem;
+}
+
+.hint.padded {
+	padding: 20px 24px;
+}
+
+/* ── Status bar (mods page footer) ────────────────── */
+.status-bar {
+	padding: 10px 24px;
+	background: rgba(74, 144, 184, 0.08);
+	border-top: 1px solid rgba(16, 33, 43, 0.08);
+	font-size: 0.88rem;
+	color: #1a2f38;
+	margin: 0;
+}
+
+/* ── Dark mode overrides ───────────────────────────── */
+@media (prefers-color-scheme: dark) {
+	.back-bar {
+		background: rgba(239, 248, 251, 0.04);
+		border-color: rgba(239, 248, 251, 0.1);
+	}
+
+	.context-tag {
+		color: #8aacb8;
+	}
+
+	.context-bar {
+		background: rgba(8, 19, 24, 0.45);
+		border-color: rgba(239, 248, 251, 0.1);
+	}
+
+	.context-label {
+		color: #d3e7ee;
+	}
+
+	.change-btn {
+		border-color: rgba(239, 248, 251, 0.24);
+		color: #7bbfe0;
+	}
+
+	.toolbar {
+		background: rgba(8, 19, 24, 0.5);
+		border-color: rgba(239, 248, 251, 0.1);
+	}
+
+	.onboarding-header h1 {
+		color: #eff8fb;
+	}
+
+	.onboarding-header p {
+		color: #8aacb8;
+	}
+
+	.hint {
+		color: #8aacb8;
+	}
+
+	.status-bar {
+		background: rgba(74, 144, 184, 0.1);
+		border-color: rgba(239, 248, 251, 0.08);
+		color: #d3e7ee;
 	}
 }

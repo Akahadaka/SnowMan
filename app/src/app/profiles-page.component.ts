@@ -42,7 +42,7 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
           <div class="profile-row" [class.active-profile]="profile.id === activeProfileId">
             @if (editingProfileId === profile.id) {
               <input
-                class="edit-name-input"
+                class="input input-bordered input-sm flex-1"
                 type="text"
                 [(ngModel)]="editingProfileName"
                 (keydown.enter)="saveEdit()"
@@ -73,6 +73,7 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
               id="profileName"
               name="profileName"
               type="text"
+              class="input input-bordered flex-1"
               [(ngModel)]="newProfileName"
               placeholder="New profile name…"
             />
@@ -92,60 +93,11 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
       height: 100%;
     }
 
-    .page-header {
-      background: #4a90b8;
-      padding: 28px 32px 24px;
-      color: #fff;
-    }
-
-    .page-header h1 {
-      margin: 0 0 4px;
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
-
-    .page-header p {
-      margin: 0;
-      font-size: 1rem;
-      opacity: 0.88;
-    }
-
-    .back-bar {
-      background: rgba(16, 33, 43, 0.07);
-      padding: 10px 32px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      border-bottom: 1px solid rgba(16, 33, 43, 0.1);
-    }
-
-    .back-link {
-      background: none;
-      border: none;
-      color: #4a90b8;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .back-link:hover { text-decoration: underline; }
-
-    .context-tag {
-      font-size: 0.85rem;
-      color: #4e6771;
-    }
-
     .profile-workspace {
       padding: 24px 32px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-    }
-
-    .hint {
-      color: #4e6771;
-      font-size: 0.95rem;
     }
 
     .profile-row {
@@ -172,6 +124,7 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
     }
 
     .active-badge {
+      display: inline-block;
       font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -182,70 +135,9 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
       margin-left: 8px;
     }
 
-    .edit-name-input {
-      flex: 1;
-      border: 1px solid #4a90b8;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.95rem;
-      background: rgba(255, 255, 255, 0.9);
-      outline: none;
-    }
-
     .profile-actions {
       display: flex;
       gap: 8px;
-    }
-
-    .selection-summary {
-      max-width: 780px;
-      padding: 18px 20px;
-      border-radius: 12px;
-      border: 1px solid rgba(74, 144, 184, 0.3);
-      background: rgba(74, 144, 184, 0.08);
-      display: grid;
-      gap: 6px;
-    }
-
-    .selection-summary strong {
-      font-size: 1.15rem;
-      color: #1a2f38;
-    }
-
-    .selection-summary p {
-      margin: 0 0 4px;
-      color: #4e6771;
-    }
-
-    .summary-label {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #4a90b8;
-      font-weight: 700;
-    }
-
-    .btn-primary {
-      background: #4a90b8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .btn-primary:hover { background: #3a7da6; }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.9);
-      color: #1a2f38;
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      cursor: pointer;
     }
 
     .create-section {
@@ -258,15 +150,6 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
       gap: 10px;
     }
 
-    input[type="text"] {
-      flex: 1;
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
-      background: rgba(255, 255, 255, 0.9);
-    }
-
     .status {
       margin: 8px 0 0;
       color: #4e6771;
@@ -275,13 +158,6 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
     }
 
     @media (prefers-color-scheme: dark) {
-      .back-bar {
-        background: rgba(239, 248, 251, 0.04);
-        border-color: rgba(239, 248, 251, 0.1);
-      }
-
-      .context-tag { color: #8aacb8; }
-
       .profile-row {
         border-color: rgba(239, 248, 251, 0.12);
         background: rgba(8, 19, 24, 0.52);
@@ -292,11 +168,8 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
         background: rgba(74, 144, 184, 0.1);
       }
 
-      .profile-name,
-      .selection-summary strong { color: #d3e7ee; }
-
-      .hint,
-      .selection-summary p { color: #8aacb8; }
+      .profile-name { color: #d3e7ee; }
+      .status { color: #8aacb8; }
 
       .btn-secondary {
         border-color: rgba(239, 248, 251, 0.2);
@@ -304,17 +177,6 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
         color: #d3e7ee;
       }
 
-      .selection-summary {
-        border-color: rgba(74, 144, 184, 0.45);
-        background: rgba(74, 144, 184, 0.12);
-      }
-
-      input[type="text"],
-      .edit-name-input {
-        border-color: rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.76);
-        color: #eff8fb;
-      }
     }
   `,
 })

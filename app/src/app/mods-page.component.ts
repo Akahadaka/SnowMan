@@ -38,7 +38,8 @@ type ModsTab = "installed" | "online";
           <input
             type="text"
             name="searchQuery"
-            [class.hidden]="activeTab !== 'online'"
+            class="input input-bordered input-sm w-full"
+            [class.invisible]="activeTab !== 'online'"
             [value]="searchQuery"
             (input)="onSearchInput($any($event.target).value)"
             placeholder="Search for a mod"
@@ -115,6 +116,7 @@ type ModsTab = "installed" | "online";
                           <label class="option-row">
                             <input
                               type="checkbox"
+                              class="checkbox checkbox-xs"
                               [checked]="isOptionSelected(existing, option)"
                               [disabled]="isOptionDisabled(option)"
                               (change)="toggleOption(activeProfileId, approved.id, option.id, $any($event.target).checked)"
@@ -146,55 +148,10 @@ type ModsTab = "installed" | "online";
   styles: `
     .mods-page { display: flex; flex-direction: column; height: 100%; }
 
-    .page-header {
-      background: #4a90b8;
-      padding: 28px 32px 24px;
-      color: #fff;
-    }
-
-    .page-header h1 { margin: 0 0 4px; font-size: 1.8rem; font-weight: 700; }
-    .page-header p { margin: 0; font-size: 0.95rem; opacity: 0.88; }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 20px;
-      border-bottom: 1px solid rgba(16, 33, 43, 0.1);
-      background: rgba(255, 255, 255, 0.6);
-    }
-
     .search-box { flex: 1; }
-
-    .search-box input {
-      width: 100%;
-      border: 1px solid rgba(16, 33, 43, 0.18);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.92rem;
-      background: rgba(255, 255, 255, 0.9);
-    }
-
-    .search-box input.hidden { visibility: hidden; }
+    .search-box input.invisible { visibility: hidden; }
 
     .tabs { display: flex; gap: 4px; }
-
-    .tab-btn {
-      background: none;
-      border: 1px solid transparent;
-      border-radius: 8px;
-      padding: 7px 14px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      color: #4e6771;
-    }
-
-    .tab-btn.active {
-      border-color: #4a90b8;
-      color: #4a90b8;
-      background: rgba(74, 144, 184, 0.07);
-    }
 
     .count {
       display: inline-block;
@@ -206,18 +163,6 @@ type ModsTab = "installed" | "online";
     }
 
     .tab-btn.active .count { background: rgba(74, 144, 184, 0.15); }
-
-    .update-all-btn {
-      background: #4a90b8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
 
     .mod-list { flex: 1; overflow-y: auto; padding: 8px 0; }
     .mod-row { border-bottom: 1px solid rgba(16, 33, 43, 0.07); }
@@ -269,78 +214,13 @@ type ModsTab = "installed" | "online";
 
     .detail-actions { margin-top: 10px; }
 
-    .btn-primary {
-      background: #4a90b8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-primary:hover { background: #3a7da6; }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.9);
-      color: #1a2f38;
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 8px;
-      padding: 7px 14px;
-      font-size: 0.88rem;
-      cursor: pointer;
-    }
-
-    .hint { color: #4e6771; font-size: 0.95rem; }
-    .padded { padding: 20px 24px; }
-
-    .status-bar {
-      padding: 10px 24px;
-      background: rgba(74, 144, 184, 0.08);
-      border-top: 1px solid rgba(16, 33, 43, 0.08);
-      font-size: 0.88rem;
-      color: #1a2f38;
-      margin: 0;
-    }
-
     @media (prefers-color-scheme: dark) {
-      .toolbar {
-        background: rgba(8, 19, 24, 0.5);
-        border-color: rgba(239, 248, 251, 0.1);
-      }
-
-      .search-box input {
-        border-color: rgba(239, 248, 251, 0.18);
-        background: rgba(8, 19, 24, 0.76);
-        color: #eff8fb;
-      }
-
-      .tab-btn { color: #8aacb8; }
-
-      .tab-btn.active {
-        border-color: #4a90b8;
-        color: #4a90b8;
-        background: rgba(74, 144, 184, 0.1);
-      }
-
       .mod-row { border-color: rgba(239, 248, 251, 0.07); }
       .mod-detail { border-color: rgba(239, 248, 251, 0.06); }
       .mod-name { color: #d3e7ee; }
       .mod-desc, .mod-desc-block { color: #8aacb8; }
       .option-row { color: #d3e7ee; }
-
-      .btn-secondary {
-        border-color: rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.5);
-        color: #d3e7ee;
-      }
-
-      .status-bar {
-        background: rgba(74, 144, 184, 0.1);
-        border-color: rgba(239, 248, 251, 0.08);
-        color: #d3e7ee;
-      }
+      .count { background: rgba(239, 248, 251, 0.1); }
     }
   `,
 })

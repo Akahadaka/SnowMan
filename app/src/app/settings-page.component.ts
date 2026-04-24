@@ -49,14 +49,15 @@ import {
             id="gameInstallPath"
             name="gameInstallPath"
             type="text"
+            class="input input-bordered flex-1"
             [(ngModel)]="form.gameInstallPath"
             placeholder="C:/Program Files (x86)/Steam/steamapps/common/SnowRunner"
           />
-          <button type="button" class="btn btn-outline btn-sm" (click)="browseInstallPath()">Browse...</button>
+          <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="browseInstallPath()">Browse...</button>
         </div>
 
         <label class="checkbox-row">
-          <input name="autoBackupOnDeploy" type="checkbox" [(ngModel)]="form.autoBackupOnDeploy" />
+          <input name="autoBackupOnDeploy" type="checkbox" class="checkbox checkbox-sm" [(ngModel)]="form.autoBackupOnDeploy" />
           <span>Auto backup before deploy</span>
         </label>
 
@@ -70,43 +71,6 @@ import {
   styles: `
     .settings-page { display: flex; flex-direction: column; height: 100%; }
 
-    .page-header {
-      background: #4a90b8;
-      padding: 28px 32px 24px;
-      color: #fff;
-    }
-
-    .page-header h1 { margin: 0; font-size: 1.8rem; font-weight: 700; }
-
-    .context-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 12px 24px;
-      background: rgba(255, 255, 255, 0.55);
-      border-bottom: 1px solid rgba(16, 33, 43, 0.1);
-    }
-
-    .context-label {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #1a2f38;
-      flex: 1;
-    }
-
-    .change-btn {
-      background: none;
-      border: 1px solid rgba(16, 33, 43, 0.25);
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-size: 0.88rem;
-      cursor: pointer;
-      color: #4a90b8;
-      font-weight: 600;
-    }
-
-    .change-btn:hover { background: rgba(74, 144, 184, 0.06); }
-
     .settings-form {
       padding: 24px;
       display: grid;
@@ -119,30 +83,10 @@ import {
       color: #314952;
     }
 
-    input[type="text"] {
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
-      background: rgba(255, 255, 255, 0.9);
-      width: 100%;
-    }
-
     .path-row {
       display: flex;
       gap: 10px;
-      align-items: stretch;
-    }
-
-    .secondary {
-      border: 1px solid rgba(16, 33, 43, 0.3);
-      border-radius: 10px;
-      padding: 0 14px;
-      font-size: 0.92rem;
-      background: rgba(255, 255, 255, 0.9);
-      color: #1a2f38;
-      cursor: pointer;
-      white-space: nowrap;
+      align-items: center;
     }
 
     .checkbox-row {
@@ -160,19 +104,6 @@ import {
       gap: 12px;
     }
 
-    .btn-primary {
-      background: #4a90b8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 20px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-primary:hover { background: #3a7da6; }
-
     .save-status {
       opacity: 0;
       color: #127255;
@@ -183,31 +114,8 @@ import {
     .save-status.visible { opacity: 1; }
 
     @media (prefers-color-scheme: dark) {
-      .context-bar {
-        background: rgba(8, 19, 24, 0.45);
-        border-color: rgba(239, 248, 251, 0.1);
-      }
-
-      .context-label { color: #d3e7ee; }
-
-      .change-btn {
-        border-color: rgba(239, 248, 251, 0.24);
-        color: #7bbfe0;
-      }
-
       label { color: #d3e7ee; }
-
-      input[type="text"] {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.76);
-        color: #eff8fb;
-      }
-
-      .secondary {
-        border: 1px solid rgba(239, 248, 251, 0.24);
-        background: rgba(8, 19, 24, 0.76);
-        color: #eff8fb;
-      }
+      .save-status { color: #4cba94; }
     }
   `,
 })

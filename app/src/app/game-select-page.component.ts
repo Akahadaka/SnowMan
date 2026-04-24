@@ -36,32 +36,6 @@ import {
     </section>
   `,
   styles: `
-    .onboarding {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px 24px;
-      min-height: 100%;
-    }
-
-    .onboarding-header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .onboarding-header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 0 0 8px;
-      color: #1a2f38;
-    }
-
-    .onboarding-header p {
-      font-size: 1.05rem;
-      color: #4e6771;
-      margin: 0;
-    }
-
     .game-grid {
       display: flex;
       flex-wrap: wrap;
@@ -110,16 +84,9 @@ import {
     }
 
     @media (prefers-color-scheme: dark) {
-      .onboarding-header h1 { color: #eff8fb; }
-      .onboarding-header p { color: #8aacb8; }
-
       .game-card {
         border-color: rgba(239, 248, 251, 0.15);
         background: rgba(8, 19, 24, 0.52);
-      }
-
-      .game-card:hover {
-        border-color: #4a90b8;
       }
 
       .game-card.selected {
