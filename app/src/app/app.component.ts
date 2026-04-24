@@ -97,6 +97,11 @@ export class AppComponent implements OnInit, DoCheck {
     this.syncShellState(true);
     const target = resolveStartupRoute(this.settings);
     void this.router.navigate([target]);
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener('change', (e) => {
+      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+    });
   }
 
   ngDoCheck(): void {
