@@ -1,15 +1,33 @@
-<main class="shell">
-  <aside class="sidebar" data-theme="dark">
-    <div class="sidebar-top">
-      <div class="brand-block">
-        <p class="eyebrow">SnowRunner Mod Manager</p>
-        <h1 class="m-0 leading-tight">{{ shellTitle }}</h1>
+<main
+  class="grid h-dvh grid-cols-[280px_minmax(0,1fr)] overflow-hidden bg-base-100 text-base-content max-[900px]:grid-cols-1 max-[900px]:grid-rows-[auto_minmax(0,1fr)]"
+>
+  <aside
+    class="flex h-full flex-col gap-6 overflow-hidden bg-base-300 px-5 py-6 text-base-content max-[900px]:sticky max-[900px]:top-0 max-[900px]:z-20 max-[900px]:h-auto max-[900px]:gap-3 max-[900px]:px-4 max-[900px]:py-3 max-[900px]:shadow-md"
+    data-theme="dark"
+  >
+    <div
+      class="grid gap-4 max-[900px]:flex max-[900px]:items-start max-[900px]:justify-between max-[900px]:gap-3"
+    >
+      <div class="grid min-w-0 flex-1 gap-1">
+        <p
+          class="m-0 text-xs font-bold uppercase tracking-widest text-primary max-[600px]:text-[0.7rem]"
+        >
+          SnowRunner Mod Manager
+        </p>
+        <h1 class="m-0 text-3xl font-bold leading-tight max-[900px]:text-2xl max-[600px]:text-xl">
+          {{ shellTitle }}
+        </h1>
       </div>
 
       @if (hasActiveProfile) {
-        <div class="card card-compact bg-base-200" aria-label="Selected profile actions">
+        <div
+          class="card card-compact w-full max-w-xs bg-base-200"
+          aria-label="Selected profile actions"
+        >
           <div class="card-body gap-2">
-            <span class="text-xs font-bold uppercase tracking-widest text-primary">Active profile</span>
+            <span class="text-xs font-bold uppercase tracking-widest text-primary"
+              >Active profile</span
+            >
             <p class="text-sm opacity-75 m-0">{{ activeProfileSummary }}</p>
             @if (shellStatusMessage) {
               <p class="text-xs text-warning m-0">{{ shellStatusMessage }}</p>
@@ -27,20 +45,24 @@
       }
     </div>
 
-    <ul class="menu menu-sm mt-auto gap-0.5" aria-label="Primary">
+    <ul
+      class="menu menu-sm mt-auto gap-0.5 max-[900px]:mt-0 max-[900px]:flex-row max-[900px]:flex-wrap"
+      aria-label="Primary"
+    >
       @for (item of navigationItems; track item.path) {
         <li>
           <a
             [routerLink]="item.path"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: true }"
-          >{{ item.label }}</a>
+            >{{ item.label }}</a
+          >
         </li>
       }
     </ul>
   </aside>
 
-  <section class="content">
+  <section class="min-h-0 min-w-0 overflow-auto p-6 max-[900px]:p-4">
     <router-outlet />
   </section>
 </main>

@@ -23,7 +23,6 @@ import { resolveStartupRoute } from "./startup.routing";
   selector: "app-root",
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: "./app.component.html",
-  styleUrl: "./app.component.css",
 })
 export class AppComponent implements OnInit, DoCheck {
   title = getAppTitle();
