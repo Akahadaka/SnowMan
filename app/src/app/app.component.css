@@ -1,21 +1,26 @@
+/* ── Root / global ─────────────────────────────────── */
 :root {
   font-family: "Segoe UI", sans-serif;
   font-size: clamp(10px, 1.35vh, 16px);
   line-height: 1.4;
   font-weight: 400;
-
-  color: #10212b;
-  background:
-    radial-gradient(circle at top right, #ffd05c 0, #ffd05c 12%, transparent 12%),
-    linear-gradient(135deg, #eef7fb 0%, #ddeff4 52%, #f7f1dc 100%);
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+  background:
+    radial-gradient(circle at top right, #ffd05c 0, #ffd05c 12%, transparent 12%),
+    linear-gradient(135deg, #eef7fb 0%, #ddeff4 52%, #f7f1dc 100%);
 }
 
+[data-theme="dark"] {
+  background:
+    radial-gradient(circle at top right, rgba(255, 208, 92, 0.18) 0, rgba(255, 208, 92, 0.18) 12%, transparent 12%),
+    linear-gradient(135deg, #16242c 0%, #152f38 52%, #2b2820 100%);
+}
+
+/* ── Shell layout ──────────────────────────────────── */
 .shell {
   height: 100dvh;
   display: grid;
@@ -29,10 +34,8 @@
   color: #eff8fb;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   gap: clamp(12px, 2vh, 24px);
   height: 100%;
-  max-height: 100%;
   overflow: hidden;
 }
 
@@ -43,121 +46,16 @@
 
 .brand-block {
   display: grid;
-  gap: 12px;
-}
-
-.brand-block h1 {
-  line-height: 1.05;
-}
-
-.shell-profile-panel {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.shell-profile-copy {
-  display: grid;
   gap: 4px;
 }
 
-.shell-profile-label {
+.eyebrow {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #7ecfe0;
-}
-
-.shell-profile-summary {
-  margin: 0;
-  color: rgba(239, 248, 251, 0.78);
-  font-size: 0.9rem;
-}
-
-.shell-status {
-  margin: 0;
-  color: #ffd78a;
-  font-size: 0.82rem;
-  line-height: 1.4;
-}
-
-.shell-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.shell-launch-btn,
-.shell-secondary-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 999px;
-  padding: 10px 20px;
-  min-width: 11.5rem;
-  font-size: 0.88rem;
-  font-weight: 700;
-  box-shadow: none;
-}
-
-.shell-launch-btn {
-  background: #4a90b8;
-  color: #eff8fb;
-}
-
-.shell-launch-btn:hover {
-  border-color: transparent;
-  background: #3a7da6;
-}
-
-.shell-secondary-btn {
-  background: rgba(255, 255, 255, 0.12);
-  color: #eff8fb;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.shell-secondary-btn:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.brand-copy {
-  color: rgba(239, 248, 251, 0.78);
-  margin: 0;
-}
-
-.nav {
-  display: grid;
-  gap: clamp(4px, 0.8vh, 10px);
-  margin-top: auto;
-}
-
-.nav-link {
-  color: #eff8fb;
-  text-decoration: none;
-  padding: clamp(7px, 0.9vh, 12px) clamp(10px, 0.9vw, 14px);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: clamp(0.86rem, 1vw, 1rem);
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.nav-link:hover,
-.nav-link.active {
-  background: rgba(56, 203, 224, 0.18);
-  transform: translateX(1px);
-}
-
-.nav-link:last-child {
-  margin-bottom: 20px;
+  color: #2a92a7;
 }
 
 .content {
@@ -170,109 +68,22 @@
   overflow: auto;
 }
 
-.topbar {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #2a92a7;
-}
-
-.page {
-  padding: 28px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 18px 40px rgba(16, 33, 43, 0.08);
-}
-
-.page h2,
-.topbar h2,
-.brand-block h1 {
-  margin: 0;
-}
-
-.ping-box {
-  min-width: 240px;
-  padding: 16px 18px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 14px 28px rgba(16, 33, 43, 0.08);
-}
-
-.ping-box p {
-  margin: 12px 0 0;
-  color: #48606a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background:
-      radial-gradient(
-        circle at top right,
-        rgba(255, 208, 92, 0.18) 0,
-        rgba(255, 208, 92, 0.18) 12%,
-        transparent 12%
-      ),
-      linear-gradient(135deg, #16242c 0%, #152f38 52%, #2b2820 100%);
-  }
-
-  .sidebar {
-    background: rgba(5, 14, 19, 0.94);
-  }
-
-  .shell-profile-panel {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.07);
-  }
-
-  .page,
-  .ping-box {
-    background: rgba(8, 19, 24, 0.76);
-    box-shadow: none;
-  }
-
-  .ping-box p,
-  .brand-copy {
-    color: rgba(239, 248, 251, 0.78);
-  }
-}
-
+/* ── Mobile ─────────────────────────────────────────── */
 @media (max-width: 900px) {
   .shell {
-    height: 100dvh;
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
-    overflow: hidden;
   }
 
   .sidebar {
     height: auto;
-    max-height: fit-content;
     overflow: hidden;
     position: sticky;
     top: 0;
     z-index: 20;
     padding: 14px 16px 12px;
-    gap: 12px;
-    background: rgba(10, 28, 38, 0.96);
+    gap: 10px;
     box-shadow: 0 10px 24px rgba(16, 33, 43, 0.18);
-  }
-
-  .brand-block {
-    gap: 4px;
-  }
-
-  .brand-block h1 {
-    font-size: 2rem;
   }
 
   .sidebar-top {
@@ -287,50 +98,15 @@
     min-width: 0;
   }
 
-  .shell-profile-panel {
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 12px;
-    padding: 10px 12px;
+  .brand-block h1 {
+    font-size: 1.6rem;
   }
 
-  .shell-actions {
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-  }
-
-  .shell-launch-btn,
-  .shell-secondary-btn {
-    padding: 6px 16px;
-    font-size: 0.78rem;
-    white-space: nowrap;
-    min-width: auto;
-  }
-
-  .nav {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 0;
-  }
-
-  .nav-link:last-child {
-    margin-bottom: 0;
-  }
-
-  .nav-link {
-    padding: 10px 8px;
-    text-align: center;
-    border-radius: 999px;
-    font-weight: 600;
-  }
-
-  .nav-link:hover,
-  .nav-link.active {
-    transform: none;
-  }
-
-  .topbar {
-    flex-direction: column;
+  /* nav becomes a horizontal row on mobile */
+  .menu {
+    flex-direction: row !important;
+    margin-top: 0 !important;
+    flex-wrap: wrap;
   }
 
   .content {
@@ -346,40 +122,10 @@
 
   .eyebrow {
     font-size: 0.64rem;
-    letter-spacing: 0.1em;
   }
 
   .brand-block h1 {
     font-size: 1.38rem;
     line-height: 1.1;
   }
-
-  .shell-profile-panel {
-    grid-template-columns: 1fr;
-    min-width: 0;
-  }
-
-  .shell-actions {
-    width: 100%;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-  }
-
-  .shell-launch-btn,
-  .shell-secondary-btn {
-    flex: 0 0 auto;
-    padding: 6px 14px;
-    font-size: 0.76rem;
-    min-width: auto;
-  }
-
-  .nav {
-    gap: 6px;
-  }
-
-  .nav-link {
-    padding: 9px 6px;
-    font-size: 0.92rem;
-  }
-
 }

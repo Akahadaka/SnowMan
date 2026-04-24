@@ -27,14 +27,15 @@ type ModsTab = "installed" | "online";
   selector: "app-mods-page",
   standalone: true,
   template: `
-    <div class="mods-page">
-      <header class="page-header">
-        <h1>Mods</h1>
-        <p>{{ activeProfileName ? 'Managing selected profile' : 'Choose a profile to continue' }}</p>
+    <div class="flex flex-col h-full">
+
+      <header class="bg-primary text-primary-content px-8 py-7">
+        <h1 class="text-3xl font-bold mb-1 mt-0">Mods</h1>
+        <p class="m-0 text-sm opacity-90">{{ activeProfileName ? 'Managing ' + activeProfileName : 'Choose a profile to continue' }}</p>
       </header>
 
-      <div class="toolbar">
-        <div class="search-box">
+      <div class="flex items-center gap-3 px-5 py-2 border-b border-base-300 bg-base-200/50">
+        <div class="flex-1">
           <input
             type="text"
             name="searchQuery"
@@ -46,74 +47,77 @@ type ModsTab = "installed" | "online";
           />
         </div>
 
-        <div class="tabs">
+        <div role="tablist" class="tabs tabs-bordered">
           <button
+            role="tab"
             type="button"
-            class="tab-btn"
-            [class.active]="activeTab === 'installed'"
+            class="tab"
+            [class.tab-active]="activeTab === 'installed'"
             (click)="activeTab = 'installed'"
           >
-            Installed <span class="count">{{ installedMods.length }}</span>
+            Installed
+            <span class="badge badge-sm badge-ghost ml-1">{{ installedMods.length }}</span>
           </button>
           <button
+            role="tab"
             type="button"
-            class="tab-btn"
-            [class.active]="activeTab === 'online'"
+            class="tab"
+            [class.tab-active]="activeTab === 'online'"
             (click)="activeTab = 'online'"
           >
-            Online <span class="count">{{ approvedMods.length }}</span>
+            Online
+            <span class="badge badge-sm badge-ghost ml-1">{{ approvedMods.length }}</span>
           </button>
         </div>
 
         @if (activeTab === 'installed' && installedMods.length > 0) {
-          <button type="button" class="update-all-btn" (click)="updateAll()">
+          <button type="button" class="btn btn-primary btn-sm" (click)="updateAll()">
             Update all
           </button>
         }
       </div>
 
       @if (profiles.length === 0) {
-        <p class="hint padded">Create a profile on the Profiles page first.</p>
+        <p class="text-base-content/60 text-sm px-6 py-5">Create a profile on the Profiles page first.</p>
       } @else if (activeTab === 'installed') {
-        <div class="mod-list">
+        <div class="flex-1 overflow-y-auto">
           @if (installedMods.length === 0) {
-            <p class="hint padded">No mods installed yet. Browse Online to add some.</p>
+            <p class="text-base-content/60 text-sm px-6 py-5">No mods installed yet. Browse Online to add some.</p>
           }
           @for (mod of installedMods; track mod.id) {
-            <div class="mod-row installed-row">
-              <div class="mod-info">
-                <span class="mod-name">{{ mod.name }}</span>
+            <div class="flex items-center gap-3 px-6 py-3.5 border-b border-base-300">
+              <div class="flex-1 flex flex-col gap-0.5">
+                <span class="font-semibold text-base-content">{{ mod.name }}</span>
                 @if (mod.description) {
-                  <span class="mod-desc">{{ mod.description }}</span>
+                  <span class="text-xs text-base-content/60">{{ mod.description }}</span>
                 }
               </div>
-              <div class="row-actions">
-                <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="updateMod(mod)">
-                  Update
-                </button>
-              </div>
+              <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="updateMod(mod)">
+                Update
+              </button>
             </div>
           }
         </div>
       } @else {
-        <div class="mod-list">
+        <div class="flex-1 overflow-y-auto">
           @for (approved of approvedMods; track approved.id) {
-            <div class="mod-row" [class.expanded]="expandedModId === approved.id">
-              <div class="mod-summary" (click)="toggleExpand(approved.id)">
-                <span class="mod-name">{{ approved.name }}</span>
-                <span class="expand-icon">{{ expandedModId === approved.id ? '▲' : '▼' }}</span>
+            <div class="border-b border-base-300">
+              <div class="flex items-center px-6 py-3.5 cursor-pointer select-none hover:bg-primary/5"
+                   (click)="toggleExpand(approved.id)">
+                <span class="font-semibold text-base-content flex-1">{{ approved.name }}</span>
+                <span class="text-base-content/50 text-xs ml-auto">{{ expandedModId === approved.id ? '▲' : '▼' }}</span>
               </div>
 
               @if (expandedModId === approved.id) {
-                <div class="mod-detail">
-                  <p class="mod-desc-block">{{ approved.description }}</p>
-                  <p class="mod-url">{{ approved.modIoUrl }}</p>
+                <div class="px-6 pb-4 border-t border-base-300/50">
+                  <p class="text-sm text-base-content/60 mt-2 mb-1">{{ approved.description }}</p>
+                  <p class="text-xs text-primary break-all mb-2">{{ approved.modIoUrl }}</p>
 
                   @if (approved.options.length > 0) {
                     @if (modByApprovedId(activeProfileId, approved.id); as existing) {
-                      <div class="options-grid">
+                      <div class="grid grid-cols-2 gap-1.5 mb-3">
                         @for (option of approved.options; track option.id) {
-                          <label class="option-row">
+                          <label class="flex items-center gap-2 text-sm text-base-content cursor-pointer">
                             <input
                               type="checkbox"
                               class="checkbox checkbox-xs"
@@ -128,11 +132,9 @@ type ModsTab = "installed" | "online";
                     }
                   }
 
-                  <div class="detail-actions">
-                    <button type="button" class="btn btn-primary btn-sm" (click)="addApprovedMod(activeProfileId, approved)">
-                      {{ modByApprovedId(activeProfileId, approved.id) ? 'Re-download' : 'Download' }}
-                    </button>
-                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="addApprovedMod(activeProfileId, approved)">
+                    {{ modByApprovedId(activeProfileId, approved.id) ? 'Re-download' : 'Download' }}
+                  </button>
                 </div>
               }
             </div>
@@ -141,109 +143,29 @@ type ModsTab = "installed" | "online";
       }
 
       @if (statusMessage) {
-        <p class="status-bar">{{ statusMessage }}</p>
+        <div role="alert" class="alert alert-info rounded-none text-sm shrink-0">
+          <span>{{ statusMessage }}</span>
+        </div>
       }
+
     </div>
-  `,
-  styles: `
-    .mods-page { display: flex; flex-direction: column; height: 100%; }
-
-    .search-box { flex: 1; }
-    .search-box input.invisible { visibility: hidden; }
-
-    .tabs { display: flex; gap: 4px; }
-
-    .count {
-      display: inline-block;
-      background: rgba(16, 33, 43, 0.1);
-      border-radius: 12px;
-      padding: 1px 7px;
-      font-size: 0.78rem;
-      margin-left: 4px;
-    }
-
-    .tab-btn.active .count { background: rgba(74, 144, 184, 0.15); }
-
-    .mod-list { flex: 1; overflow-y: auto; padding: 8px 0; }
-    .mod-row { border-bottom: 1px solid rgba(16, 33, 43, 0.07); }
-
-    .installed-row {
-      display: flex;
-      align-items: center;
-      padding: 14px 24px;
-    }
-
-    .mod-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-
-    .mod-summary {
-      display: flex;
-      align-items: center;
-      padding: 14px 24px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .mod-summary:hover { background: rgba(74, 144, 184, 0.04); }
-    .expand-icon { margin-left: auto; color: #4e6771; font-size: 0.75rem; }
-    .mod-name { font-weight: 600; font-size: 0.97rem; color: #1a2f38; }
-    .mod-desc { font-size: 0.83rem; color: #4e6771; }
-    .row-actions { display: flex; gap: 8px; }
-
-    .mod-detail {
-      padding: 0 24px 16px;
-      border-top: 1px solid rgba(16, 33, 43, 0.06);
-    }
-
-    .mod-desc-block { font-size: 0.9rem; color: #4e6771; margin: 8px 0 4px; }
-    .mod-url { font-size: 0.8rem; color: #4a90b8; word-break: break-all; margin: 0 0 10px; }
-
-    .options-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(200px, 1fr));
-      gap: 6px;
-      margin: 8px 0;
-    }
-
-    .option-row {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-      color: #314952;
-    }
-
-    .detail-actions { margin-top: 10px; }
-
-    @media (prefers-color-scheme: dark) {
-      .mod-row { border-color: rgba(239, 248, 251, 0.07); }
-      .mod-detail { border-color: rgba(239, 248, 251, 0.06); }
-      .mod-name { color: #d3e7ee; }
-      .mod-desc, .mod-desc-block { color: #8aacb8; }
-      .option-row { color: #d3e7ee; }
-      .count { background: rgba(239, 248, 251, 0.1); }
-    }
   `,
 })
 export class ModsPageComponent {
-  approvedMods: ReadonlyArray<ApprovedModDefinition> = [...APPROVED_MODS];
   activeTab: ModsTab = "installed";
   expandedModId: string | null = null;
-  settings: AppSettings;
-  profiles: Profile[] = [];
   statusMessage = "";
   searchQuery = "";
-  private profileSelectionsByProfileId: Record<string, Record<string, Record<string, boolean>>> =
-    {};
+  profiles: Profile[] = [];
+  approvedMods: ApprovedModDefinition[] = [...APPROVED_MODS];
+  profileSelectionsByProfileId: Record<string, Record<string, Record<string, boolean>>> = {};
 
+  private settings: AppSettings;
   private readonly storage: StorageLike;
 
   constructor() {
     this.storage = this.resolveStorage();
-    const loaded = loadSettings(this.storage);
-    this.settings = mergeSettings(
-      { selectedStoreId: ACTIVE_STORE_ID, selectedGameId: ACTIVE_GAME_ID },
-      loaded,
-    );
+    this.settings = loadSettings(this.storage);
     this.refreshProfiles();
     void this.initializeCatalog();
   }
@@ -255,62 +177,34 @@ export class ModsPageComponent {
     );
   }
 
-  get activeProfileLabel(): string {
-    const profile = this.profiles.find((p) => p.id === this.activeProfileId);
-    return profile ? `Profile: ${profile.name}` : "No active profile selected";
-  }
-
   get activeProfileName(): string {
-    return this.profiles.find((p) => p.id === this.activeProfileId)?.name ?? "";
+    const profile = this.profiles.find((p) => p.id === this.activeProfileId);
+    return profile?.name ?? "";
   }
 
   get installedMods(): ModEntry[] {
     if (!this.activeProfileId) return [];
-    return Object.values(
-      getModsForProfile(
-        this.settings,
-        this.settings.selectedStoreId,
-        this.settings.selectedGameId,
-        this.activeProfileId,
-      ),
-    );
+    return Object.values(getModsForProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.activeProfileId,
+    ));
   }
 
-  toggleExpand(modId: string): void {
-    this.expandedModId = this.expandedModId === modId ? null : modId;
+  modByApprovedId(profileId: string, approvedId: string): ModEntry | undefined {
+    if (!profileId) return undefined;
+    const mods = Object.values(getModsForProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      profileId,
+    ));
+    return mods.find((m) => m.approvedModId === approvedId);
   }
 
-  modsFor(profileId: string): ModEntry[] {
-    return Object.values(
-      getModsForProfile(
-        this.settings,
-        this.settings.selectedStoreId,
-        this.settings.selectedGameId,
-        profileId,
-      ),
-    );
-  }
-
-  modByApprovedId(profileId: string, approvedModId: string): ModEntry | undefined {
-    const existing = this.modsFor(profileId).find((entry) => entry.approvedModId === approvedModId);
-    const dbSelection = this.profileSelectionsByProfileId[profileId]?.[approvedModId];
-
-    if (existing) {
-      return { ...existing, selectedOptions: dbSelection ?? existing.selectedOptions };
-    }
-
-    if (dbSelection) {
-      return {
-        id: approvedModId,
-        name: approvedModId,
-        sourceFolderPath: "",
-        importedAt: "",
-        approvedModId,
-        selectedOptions: dbSelection,
-      };
-    }
-
-    return undefined;
+  toggleExpand(id: string): void {
+    this.expandedModId = this.expandedModId === id ? null : id;
   }
 
   isOptionSelected(mod: ModEntry, option: ApprovedModOption): boolean {
@@ -339,7 +233,7 @@ export class ModsPageComponent {
       return;
     }
 
-    this.statusMessage = `Downloading ${approved.name}…`;
+    this.statusMessage = `Downloading ${approved.name}...`;
     const destination = toDownloadedModPath(installPath, approved.id);
     const extractedPath = await downloadAndExtractZip(approved.downloadUrl, destination);
     if (!extractedPath) {
@@ -393,7 +287,7 @@ export class ModsPageComponent {
       this.statusMessage = "No approved mods to update.";
       return;
     }
-    this.statusMessage = `Updating ${modsWithApproved.length} mod(s)…`;
+    this.statusMessage = `Updating ${modsWithApproved.length} mod(s)...`;
     for (const mod of modsWithApproved) {
       await this.updateMod(mod);
     }

@@ -15,113 +15,43 @@ import {
   standalone: true,
   imports: [FormsModule],
   template: `
-    <section class="onboarding">
-      <header class="onboarding-header">
-        <h1>Choose Your Store</h1>
-        <p>Which store manages your SnowRunner installation?</p>
+    <section class="flex flex-col items-center px-6 pt-12 min-h-full">
+      <header class="text-center mb-10">
+        <h1 class="text-3xl font-bold mb-2 text-base-content">Choose Your Store</h1>
+        <p class="text-base-content/60 m-0">Which store manages your SnowRunner installation?</p>
       </header>
 
-      <div class="store-card">
-        <fieldset class="store-options">
-          <legend class="sr-only">Store</legend>
-          @for (store of storeOptions; track store.id) {
-            <label class="store-option" [class.selected]="selectedStoreId === store.id">
-              <input
-                type="radio"
-                name="store"
-                [value]="store.id"
-                [(ngModel)]="selectedStoreId"
-              />
-              <span>{{ store.label }}</span>
-            </label>
-          }
-        </fieldset>
+      <div class="card bg-base-100 border border-base-300 w-full max-w-lg">
+        <div class="card-body">
+          <fieldset class="border-none m-0 p-0 flex flex-col gap-3 mb-2">
+            <legend class="sr-only">Store</legend>
+            @for (store of storeOptions; track store.id) {
+              <label class="flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer font-medium text-base-content transition-colors"
+                     [class.border-primary]="selectedStoreId === store.id"
+                     [class.bg-primary]="selectedStoreId === store.id"
+                     [class.bg-opacity-5]="selectedStoreId === store.id"
+                     [class.border-base-300]="selectedStoreId !== store.id">
+                <input
+                  type="radio"
+                  class="radio radio-primary radio-sm"
+                  name="store"
+                  [value]="store.id"
+                  [(ngModel)]="selectedStoreId"
+                />
+                <span>{{ store.label }}</span>
+              </label>
+            }
+          </fieldset>
 
-        <div class="actions">
-          <button type="button" class="back-btn" (click)="back()">← Back</button>
-          <button type="button" class="continue-btn" (click)="continueToDiscovery()">
-            Select platform
-          </button>
+          <div class="card-actions justify-end mt-2">
+            <button type="button" class="btn btn-ghost" (click)="back()">← Back</button>
+            <button type="button" class="btn btn-primary" (click)="continueToDiscovery()">
+              Select platform
+            </button>
+          </div>
         </div>
       </div>
     </section>
-  `,
-  styles: `
-    .store-card {
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(16, 33, 43, 0.14);
-      border-radius: 16px;
-      padding: 32px 40px;
-      min-width: 360px;
-      max-width: 520px;
-      width: 100%;
-    }
-
-    .store-options {
-      border: none;
-      margin: 0 0 24px;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .store-option {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border: 1px solid rgba(16, 33, 43, 0.12);
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: 500;
-      color: #1a2f38;
-      transition: border-color 0.14s;
-    }
-
-    .store-option.selected {
-      border-color: #4a90b8;
-      background: rgba(74, 144, 184, 0.07);
-    }
-
-    .store-option input[type="radio"] {
-      accent-color: #4a90b8;
-      width: 18px;
-      height: 18px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      align-items: center;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .store-card {
-        border-color: rgba(239, 248, 251, 0.15);
-        background: rgba(8, 19, 24, 0.52);
-      }
-
-      .store-option {
-        border-color: rgba(239, 248, 251, 0.12);
-        color: #d3e7ee;
-      }
-
-      .store-option.selected {
-        border-color: #4a90b8;
-        background: rgba(74, 144, 184, 0.12);
-      }
-    }
   `,
 })
 export class StoreSelectPageComponent {

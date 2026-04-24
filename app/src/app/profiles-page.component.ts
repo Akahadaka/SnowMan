@@ -20,164 +20,77 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
   standalone: true,
   imports: [FormsModule],
   template: `
-    <div class="profile-page">
-      <header class="page-header">
-        <h1>Profile selection</h1>
-        <p>Profiles help to organise mods easily</p>
+    <div class="flex flex-col h-full">
+
+      <header class="bg-primary text-primary-content px-8 py-7">
+        <h1 class="text-3xl font-bold mb-1 mt-0">Profile selection</h1>
+        <p class="m-0 text-sm opacity-90">Profiles help to organise mods easily</p>
       </header>
 
-      <div class="back-bar">
-        <button type="button" class="back-link" (click)="backToGameSelect()">
+      <div class="flex items-center gap-4 px-8 py-2 bg-base-200 border-b border-base-300">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="backToGameSelect()">
           ← Back to game selection
         </button>
-        <span class="context-tag">{{ gameLabel }} · {{ storeLabel }}</span>
+        <span class="text-sm text-base-content/60">{{ gameLabel }} · {{ storeLabel }}</span>
       </div>
 
-      <div class="profile-workspace">
+      <div class="flex flex-col gap-3 p-8 overflow-auto">
         @if (profiles.length === 0) {
-          <p class="hint">No profiles yet. Create one below to get started.</p>
+          <p class="text-base-content/60 text-sm">No profiles yet. Create one below to get started.</p>
         }
 
         @for (profile of profiles; track profile.id) {
-          <div class="profile-row" [class.active-profile]="profile.id === activeProfileId">
-            @if (editingProfileId === profile.id) {
-              <input
-                class="input input-bordered input-sm flex-1"
-                type="text"
-                [(ngModel)]="editingProfileName"
-                (keydown.enter)="saveEdit()"
-                (keydown.escape)="cancelEdit()"
-              />
-              <div class="profile-actions">
-                <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit()">Save</button>
-                <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="cancelEdit()">Cancel</button>
-              </div>
-            } @else {
-              <span class="profile-name">
-                {{ profile.name }}
-                @if (profile.id === activeProfileId) {
-                  <span class="active-badge">Active</span>
-                }
-              </span>
-              <div class="profile-actions">
-                <button type="button" class="btn btn-primary btn-sm" (click)="openProfile(profile.id)">Open</button>
-                <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="startEdit(profile)">Rename</button>
-              </div>
-            }
+          <div class="card card-compact bg-base-100 border max-w-3xl"
+               [class.border-primary]="profile.id === activeProfileId"
+               [class.border-base-300]="profile.id !== activeProfileId">
+            <div class="card-body flex-row items-center gap-3">
+              @if (editingProfileId === profile.id) {
+                <input
+                  class="input input-bordered input-sm flex-1"
+                  type="text"
+                  [(ngModel)]="editingProfileName"
+                  (keydown.enter)="saveEdit()"
+                  (keydown.escape)="cancelEdit()"
+                />
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit()">Save</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEdit()">Cancel</button>
+                </div>
+              } @else {
+                <span class="font-semibold flex-1 text-base-content">
+                  {{ profile.name }}
+                  @if (profile.id === activeProfileId) {
+                    <span class="badge badge-primary badge-outline badge-xs ml-2">Active</span>
+                  }
+                </span>
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-primary btn-sm" (click)="openProfile(profile.id)">Open</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(profile)">Rename</button>
+                </div>
+              }
+            </div>
           </div>
         }
 
-        <div class="create-section">
-          <div class="create-row">
-            <input
-              id="profileName"
-              name="profileName"
-              type="text"
-              class="input input-bordered flex-1"
-              [(ngModel)]="newProfileName"
-              placeholder="New profile name…"
-            />
-            <button type="button" class="btn btn-primary" (click)="createProfile()">
-              Create new
-            </button>
-          </div>
-          <p class="status">{{ statusMessage }}</p>
+        <div class="join max-w-3xl mt-2">
+          <input
+            id="profileName"
+            name="profileName"
+            type="text"
+            class="input input-bordered join-item flex-1"
+            [(ngModel)]="newProfileName"
+            placeholder="New profile name…"
+          />
+          <button type="button" class="btn btn-primary join-item" (click)="createProfile()">
+            Create new
+          </button>
         </div>
+        @if (statusMessage) {
+          <p class="text-sm text-base-content/60 mt-1">{{ statusMessage }}</p>
+        }
       </div>
+
     </div>
-  `,
-  styles: `
-    .profile-page {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    .profile-workspace {
-      padding: 24px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .profile-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border: 1px solid rgba(16, 33, 43, 0.12);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.72);
-      max-width: 780px;
-    }
-
-    .profile-row.active-profile {
-      border-color: #4a90b8;
-      background: rgba(74, 144, 184, 0.06);
-    }
-
-    .profile-name {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #1a2f38;
-      flex: 1;
-    }
-
-    .active-badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: #4a90b8;
-      border: 1px solid #4a90b8;
-      border-radius: 6px;
-      padding: 2px 7px;
-      margin-left: 8px;
-    }
-
-    .profile-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .create-section {
-      max-width: 780px;
-      margin-top: 4px;
-    }
-
-    .create-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .status {
-      margin: 8px 0 0;
-      color: #4e6771;
-      font-size: 0.88rem;
-      min-height: 18px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .profile-row {
-        border-color: rgba(239, 248, 251, 0.12);
-        background: rgba(8, 19, 24, 0.52);
-      }
-
-      .profile-row.active-profile {
-        border-color: #4a90b8;
-        background: rgba(74, 144, 184, 0.1);
-      }
-
-      .profile-name { color: #d3e7ee; }
-      .status { color: #8aacb8; }
-
-      .btn-secondary {
-        border-color: rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.5);
-        color: #d3e7ee;
-      }
-
-    }
   `,
 })
 export class ProfilesPageComponent {

@@ -30,21 +30,22 @@ import {
   standalone: true,
   imports: [FormsModule],
   template: `
-    <div class="settings-page">
-      <header class="page-header">
-        <h1>Settings</h1>
+    <div class="flex flex-col h-full">
+
+      <header class="bg-primary text-primary-content px-8 py-7">
+        <h1 class="text-3xl font-bold m-0">Settings</h1>
       </header>
 
-      <div class="context-bar">
-        <span class="context-label">{{ gameLabel }} &mdash; {{ storeLabel }}</span>
-        <button type="button" class="change-btn" (click)="changeGameOrStore()">
+      <div class="flex items-center gap-4 px-6 py-3 bg-base-200 border-b border-base-300">
+        <span class="font-semibold flex-1 text-base-content">{{ gameLabel }} &mdash; {{ storeLabel }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="changeGameOrStore()">
           Change game / store
         </button>
       </div>
 
-      <form class="settings-form" (ngSubmit)="save()">
-        <label for="gameInstallPath">Install Path</label>
-        <div class="path-row">
+      <form class="grid gap-4 p-6 max-w-2xl" (ngSubmit)="save()">
+        <label class="label-text font-semibold text-base-content" for="gameInstallPath">Install Path</label>
+        <div class="flex gap-2">
           <input
             id="gameInstallPath"
             name="gameInstallPath"
@@ -53,71 +54,24 @@ import {
             [(ngModel)]="form.gameInstallPath"
             placeholder="C:/Program Files (x86)/Steam/steamapps/common/SnowRunner"
           />
-          <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="browseInstallPath()">Browse...</button>
+          <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="browseInstallPath()">Browse…</button>
         </div>
 
-        <label class="checkbox-row">
+        <label class="label cursor-pointer justify-start gap-3 w-fit">
           <input name="autoBackupOnDeploy" type="checkbox" class="checkbox checkbox-sm" [(ngModel)]="form.autoBackupOnDeploy" />
-          <span>Auto backup before deploy</span>
+          <span class="label-text">Auto backup before deploy</span>
         </label>
 
-        <div class="actions">
+        <div class="flex items-center gap-3 mt-1">
           <button type="submit" class="btn btn-primary">Save Settings</button>
-          <span class="save-status" [class.visible]="saveState === 'saved'">Saved</span>
+          <span class="font-bold text-success transition-opacity duration-150"
+                [class.opacity-0]="saveState !== 'saved'"
+                [class.opacity-100]="saveState === 'saved'">Saved ✓</span>
         </div>
       </form>
     </div>
   `,
-  styles: `
-    .settings-page { display: flex; flex-direction: column; height: 100%; }
-
-    .settings-form {
-      padding: 24px;
-      display: grid;
-      gap: 14px;
-      max-width: 680px;
-    }
-
-    label {
-      font-weight: 600;
-      color: #314952;
-    }
-
-    .path-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .checkbox-row {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 500;
-      width: fit-content;
-    }
-
-    .actions {
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .save-status {
-      opacity: 0;
-      color: #127255;
-      font-weight: 700;
-      transition: opacity 0.15s ease;
-    }
-
-    .save-status.visible { opacity: 1; }
-
-    @media (prefers-color-scheme: dark) {
-      label { color: #d3e7ee; }
-      .save-status { color: #4cba94; }
-    }
-  `,
+  styles: ``,
 })
 export class SettingsPageComponent {
   readonly storeOptions: ReadonlyArray<StoreOption> = STORE_OPTIONS;

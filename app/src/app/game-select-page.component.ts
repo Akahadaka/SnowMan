@@ -13,89 +13,29 @@ import {
   selector: "app-game-select-page",
   standalone: true,
   template: `
-    <section class="onboarding">
-      <header class="onboarding-header">
-        <h1>Select Your Game</h1>
-        <p>Which game are you managing mods for?</p>
+    <section class="flex flex-col items-center px-6 pt-12 min-h-full">
+      <header class="text-center mb-10">
+        <h1 class="text-3xl font-bold mb-2 text-base-content">Select Your Game</h1>
+        <p class="text-base-content/60 m-0">Which game are you managing mods for?</p>
       </header>
 
-      <div class="game-grid">
+      <div class="flex flex-wrap gap-5 justify-center max-w-3xl">
         @for (game of gameOptions; track game.id) {
           <button
-            class="game-card"
+            class="card bg-base-100 border-2 cursor-pointer w-44 h-56 transition-all hover:border-primary hover:shadow-md"
             type="button"
-            [class.selected]="selectedGameId === game.id"
+            [class.border-primary]="selectedGameId === game.id"
+            [class.shadow-md]="selectedGameId === game.id"
+            [class.border-base-300]="selectedGameId !== game.id"
             (click)="selectGame(game)"
           >
-            <div class="game-card-inner">
-              <span class="game-name">{{ game.label }}</span>
+            <div class="card-body items-center justify-end">
+              <span class="card-title text-base text-base-content">{{ game.label }}</span>
             </div>
           </button>
         }
       </div>
     </section>
-  `,
-  styles: `
-    .game-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      max-width: 900px;
-    }
-
-    .game-card {
-      width: 180px;
-      height: 220px;
-      border: 2px solid rgba(16, 33, 43, 0.14);
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.72);
-      cursor: pointer;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 12px;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      text-align: center;
-    }
-
-    .game-card:hover {
-      border-color: #4a90b8;
-      box-shadow: 0 4px 16px rgba(74, 144, 184, 0.18);
-    }
-
-    .game-card.selected {
-      border-color: #4a90b8;
-      box-shadow: 0 0 0 3px rgba(74, 144, 184, 0.28);
-      background: rgba(74, 144, 184, 0.06);
-    }
-
-    .game-card-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .game-name {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: #1a2f38;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .game-card {
-        border-color: rgba(239, 248, 251, 0.15);
-        background: rgba(8, 19, 24, 0.52);
-      }
-
-      .game-card.selected {
-        border-color: #4a90b8;
-        background: rgba(74, 144, 184, 0.1);
-      }
-
-      .game-name { color: #d3e7ee; }
-    }
   `,
 })
 export class GameSelectPageComponent {

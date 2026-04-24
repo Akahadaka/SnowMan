@@ -1,45 +1,43 @@
 <main class="shell">
-  <aside class="sidebar">
+  <aside class="sidebar" data-theme="dark">
     <div class="sidebar-top">
       <div class="brand-block">
         <p class="eyebrow">SnowRunner Mod Manager</p>
-        <h1>{{ shellTitle }}</h1>
+        <h1 class="m-0 leading-tight">{{ shellTitle }}</h1>
       </div>
 
       @if (hasActiveProfile) {
-        <section class="shell-profile-panel" aria-label="Selected profile actions">
-          <div class="shell-profile-copy">
-            <span class="shell-profile-label">Active profile</span>
-            <p class="shell-profile-summary">{{ activeProfileSummary }}</p>
+        <div class="card card-compact bg-base-200" aria-label="Selected profile actions">
+          <div class="card-body gap-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-primary">Active profile</span>
+            <p class="text-sm opacity-75 m-0">{{ activeProfileSummary }}</p>
             @if (shellStatusMessage) {
-              <p class="shell-status">{{ shellStatusMessage }}</p>
+              <p class="text-xs text-warning m-0">{{ shellStatusMessage }}</p>
             }
+            <div class="card-actions pt-1 flex-wrap gap-2">
+              <button type="button" class="btn btn-primary btn-sm flex-1" (click)="launchModded()">
+                ▶ Start modded
+              </button>
+              <button type="button" class="btn btn-outline btn-sm flex-1" (click)="launchVanilla()">
+                ▶ Start vanilla
+              </button>
+            </div>
           </div>
-
-          <div class="shell-actions">
-            <button type="button" class="shell-launch-btn" (click)="launchModded()">
-              ▶ Start modded
-            </button>
-            <button type="button" class="shell-secondary-btn" (click)="launchVanilla()">
-              ▶ Start vanilla
-            </button>
-          </div>
-        </section>
+        </div>
       }
     </div>
 
-    <nav class="nav" aria-label="Primary">
+    <ul class="menu menu-sm mt-auto gap-0.5" aria-label="Primary">
       @for (item of navigationItems; track item.path) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="nav-link"
-        >
-          {{ item.label }}
-        </a>
+        <li>
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >{{ item.label }}</a>
+        </li>
       }
-    </nav>
+    </ul>
   </aside>
 
   <section class="content">
