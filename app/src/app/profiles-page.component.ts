@@ -49,8 +49,8 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
                 (keydown.escape)="cancelEdit()"
               />
               <div class="profile-actions">
-                <button type="button" class="btn-primary" (click)="saveEdit()">Save</button>
-                <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit()">Save</button>
+                <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="cancelEdit()">Cancel</button>
               </div>
             } @else {
               <span class="profile-name">
@@ -60,8 +60,8 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
                 }
               </span>
               <div class="profile-actions">
-                <button type="button" class="btn-primary" (click)="openProfile(profile.id)">Open</button>
-                <button type="button" class="btn-secondary" (click)="startEdit(profile)">Rename</button>
+                <button type="button" class="btn btn-primary btn-sm" (click)="openProfile(profile.id)">Open</button>
+                <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="startEdit(profile)">Rename</button>
               </div>
             }
           </div>
@@ -76,7 +76,7 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
               [(ngModel)]="newProfileName"
               placeholder="New profile name…"
             />
-            <button type="button" class="btn-primary" (click)="createProfile()">
+            <button type="button" class="btn btn-primary" (click)="createProfile()">
               Create new
             </button>
           </div>

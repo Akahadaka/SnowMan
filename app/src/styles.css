@@ -1,14 +1,65 @@
-/* You can add global styles to this file, and also import other style files */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-html,
-body {
-	height: 100%;
-	margin: 0;
-	overflow: hidden;
+@layer base {
+	html,
+	body {
+		height: 100%;
+		margin: 0;
+		overflow: hidden;
+	}
+
+	app-root {
+		display: block;
+		height: 100%;
+		overflow: hidden;
+	}
 }
 
-app-root {
-	display: block;
-	height: 100%;
-	overflow: hidden;
+@layer components {
+	.back-link,
+	.back-btn,
+	.change-btn {
+		@apply btn btn-ghost btn-sm;
+	}
+
+	.continue-btn,
+	.manual-btn,
+	.update-all-btn {
+		@apply btn btn-primary;
+	}
+
+	.secondary {
+		@apply btn btn-outline;
+	}
+
+	.tab-btn {
+		@apply btn btn-ghost btn-sm;
+	}
+
+	.tab-btn.active {
+		@apply btn-info text-info-content;
+	}
+
+	.shell-launch-btn {
+		@apply btn btn-primary;
+	}
+
+	.shell-secondary-btn {
+		@apply btn btn-outline;
+	}
+
+	.nav-link {
+		@apply btn btn-ghost justify-start normal-case;
+	}
+
+	.profile-row,
+	.mod-row,
+	.selection-summary,
+	.settings-card,
+	.onboarding-header,
+	.profile-spotlight {
+		@apply card bg-base-100;
+	}
 }

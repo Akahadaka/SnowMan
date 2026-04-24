@@ -87,7 +87,7 @@ type ModsTab = "installed" | "online";
                 }
               </div>
               <div class="row-actions">
-                <button type="button" class="btn-secondary" (click)="updateMod(mod)">
+                <button type="button" class="btn btn-outline btn-neutral btn-sm" (click)="updateMod(mod)">
                   Update
                 </button>
               </div>
@@ -127,7 +127,7 @@ type ModsTab = "installed" | "online";
                   }
 
                   <div class="detail-actions">
-                    <button type="button" class="btn-primary" (click)="addApprovedMod(activeProfileId, approved)">
+                    <button type="button" class="btn btn-primary btn-sm" (click)="addApprovedMod(activeProfileId, approved)">
                       {{ modByApprovedId(activeProfileId, approved.id) ? 'Re-download' : 'Download' }}
                     </button>
                   </div>

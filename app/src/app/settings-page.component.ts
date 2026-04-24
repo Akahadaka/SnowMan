@@ -52,7 +52,7 @@ import {
             [(ngModel)]="form.gameInstallPath"
             placeholder="C:/Program Files (x86)/Steam/steamapps/common/SnowRunner"
           />
-          <button type="button" class="secondary" (click)="browseInstallPath()">Browse...</button>
+          <button type="button" class="btn btn-outline btn-sm" (click)="browseInstallPath()">Browse...</button>
         </div>
 
         <label class="checkbox-row">
@@ -61,7 +61,7 @@ import {
         </label>
 
         <div class="actions">
-          <button type="submit" class="btn-primary">Save Settings</button>
+          <button type="submit" class="btn btn-primary">Save Settings</button>
           <span class="save-status" [class.visible]="saveState === 'saved'">Saved</span>
         </div>
       </form>
