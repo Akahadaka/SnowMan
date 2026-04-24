@@ -4,7 +4,7 @@ export type ShellNavigationItem = {
 };
 
 export const shellNavigationItems: ShellNavigationItem[] = [
-  { label: "Profiles", path: "/profiles" },
-  { label: "Mods", path: "/mods" },
-  { label: "Settings", path: "/settings" },
+  { label: 'Profiles', path: '/profiles' },
+  { label: 'Mods', path: '/mods' },
+  { label: 'Settings', path: '/settings' },
 ];

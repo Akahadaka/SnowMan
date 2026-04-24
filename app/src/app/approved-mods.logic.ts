@@ -1,10 +1,10 @@
-import { getApprovedMod } from "./approved-mods.catalog";
-import { buildDeployCandidates } from "./mod.import";
-import type { ApprovedModDefinition, ApprovedModInstallStep, ModEntry } from "./mod.types";
-import type { DeployCandidate } from "./safety-dry-run.types";
+import { getApprovedMod } from './approved-mods.catalog';
+import { buildDeployCandidates } from './mod.import';
+import type { ApprovedModDefinition, ApprovedModInstallStep, ModEntry } from './mod.types';
+import type { DeployCandidate } from './safety-dry-run.types';
 
 function normalizePath(path: string): string {
-  return path.replace(/\\/g, "/").replace(/\/$/, "");
+  return path.replace(/\\/g, '/').replace(/\/$/, '');
 }
 
 export function toDownloadedModPath(installPath: string, approvedModId: string): string {
@@ -44,7 +44,7 @@ export function buildCandidatesForApprovedDefinition(
   const files = installSteps.map((step) => step.sourceRelativePath);
 
   // Build candidates with source paths under extracted folder.
-  const bySource = buildDeployCandidates(modEntry, "", files, () => true);
+  const bySource = buildDeployCandidates(modEntry, '', files, () => true);
 
   // Override relative targets from curated recipe (base + selected options).
   const stepMap = new Map<string, ApprovedModInstallStep>();

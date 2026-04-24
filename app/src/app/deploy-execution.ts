@@ -1,14 +1,14 @@
-import { runSafetyDryRun } from "./safety-dry-run";
-import type { DeployCandidate, SafetyDryRunReport } from "./safety-dry-run.types";
+import { runSafetyDryRun } from './safety-dry-run';
+import type { DeployCandidate, SafetyDryRunReport } from './safety-dry-run.types';
 import type {
   BackupRecord,
   DeployExecutionResult,
   LaunchExecutionResult,
   RestoreExecutionResult,
-} from "./deploy-execution.types";
+} from './deploy-execution.types';
 
 function toBackupSuffix(isoTimestamp: string): string {
-  return isoTimestamp.replace(/:/g, "-");
+  return isoTimestamp.replace(/:/g, '-');
 }
 
 function buildBackupPath(targetPath: string, isoTimestamp: string): string {
@@ -23,7 +23,7 @@ export function executeControlledDeploy(
 
   if (!dryRun.canProceed) {
     return {
-      status: "blocked",
+      status: 'blocked',
       dryRun,
       plannedBackups: [],
       plannedCopies: [],
@@ -37,7 +37,7 @@ export function executeControlledDeploy(
   }));
 
   return {
-    status: "planned",
+    status: 'planned',
     dryRun,
     plannedBackups,
     plannedCopies: dryRun.plannedCopies,
@@ -46,28 +46,28 @@ export function executeControlledDeploy(
 
 export function evaluateLaunchReadiness(dryRun: SafetyDryRunReport): LaunchExecutionResult {
   if (!dryRun.canProceed) {
-    const firstError = dryRun.issues.find((issue) => issue.severity === "error");
+    const firstError = dryRun.issues.find((issue) => issue.severity === 'error');
     return {
-      status: "blocked",
-      reason: firstError?.message ?? "Safety preflight failed.",
+      status: 'blocked',
+      reason: firstError?.message ?? 'Safety preflight failed.',
     };
   }
 
   return {
-    status: "ready",
+    status: 'ready',
   };
 }
 
 export function planRestore(backups: BackupRecord[]): RestoreExecutionResult {
   if (backups.length === 0) {
     return {
-      status: "none",
+      status: 'none',
       plannedRestores: [],
     };
   }
 
   return {
-    status: "planned",
+    status: 'planned',
     plannedRestores: backups.map((backup) => ({
       backupPath: backup.backupPath,
       targetPath: backup.targetPath,

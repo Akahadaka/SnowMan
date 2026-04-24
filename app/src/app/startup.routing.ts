@@ -1,4 +1,4 @@
-import type { AppSettings } from "./settings.persistence";
+import type { AppSettings } from './settings.persistence';
 
 /**
  * Determines the correct Angular route path to navigate to on app startup,
@@ -9,7 +9,7 @@ import type { AppSettings } from "./settings.persistence";
  */
 export function resolveStartupRoute(settings: AppSettings): string {
   if (settings.onboardingComplete) {
-    return "/profiles";
+    return '/profiles';
   }
-  return "/game-select";
+  return '/game-select';
 }

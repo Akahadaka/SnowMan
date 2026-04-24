@@ -1,27 +1,23 @@
-import { Component } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { Router } from "@angular/router";
-import { getProfiles, updateProfile } from "./profiles.persistence";
-import type { Profile } from "./profile.types";
-import {
-  createNamedProfile,
-  selectActiveProfile,
-} from "./profiles-page.logic";
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { getProfiles, updateProfile } from './profiles.persistence';
+import type { Profile } from './profile.types';
+import { createNamedProfile, selectActiveProfile } from './profiles-page.logic';
 import {
   loadSettings,
   saveSettings,
   type AppSettings,
   type StorageLike,
-} from "./settings.persistence";
-import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
+} from './settings.persistence';
+import { STORE_OPTIONS, GAME_OPTIONS } from './game-context';
 
 @Component({
-  selector: "app-profiles-page",
+  selector: 'app-profiles-page',
   standalone: true,
   imports: [FormsModule],
   template: `
     <div class="flex flex-col h-full">
-
       <header class="bg-primary text-primary-content px-8 py-7">
         <h1 class="text-3xl font-bold mb-1 mt-0">Profile selection</h1>
         <p class="m-0 text-sm opacity-90">Profiles help to organise mods easily</p>
@@ -36,13 +32,17 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
 
       <div class="flex flex-col gap-3 p-8 overflow-auto">
         @if (profiles.length === 0) {
-          <p class="text-base-content/60 text-sm">No profiles yet. Create one below to get started.</p>
+          <p class="text-base-content/60 text-sm">
+            No profiles yet. Create one below to get started.
+          </p>
         }
 
         @for (profile of profiles; track profile.id) {
-          <div class="card card-compact bg-base-100 border max-w-3xl"
-               [class.border-primary]="profile.id === activeProfileId"
-               [class.border-base-300]="profile.id !== activeProfileId">
+          <div
+            class="card card-compact bg-base-100 border max-w-3xl"
+            [class.border-primary]="profile.id === activeProfileId"
+            [class.border-base-300]="profile.id !== activeProfileId"
+          >
             <div class="card-body flex-row items-center gap-3">
               @if (editingProfileId === profile.id) {
                 <input
@@ -53,8 +53,12 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
                   (keydown.escape)="cancelEdit()"
                 />
                 <div class="flex gap-2">
-                  <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit()">Save</button>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEdit()">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit()">
+                    Save
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEdit()">
+                    Cancel
+                  </button>
                 </div>
               } @else {
                 <span class="font-semibold flex-1 text-base-content">
@@ -64,8 +68,16 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
                   }
                 </span>
                 <div class="flex gap-2">
-                  <button type="button" class="btn btn-primary btn-sm" (click)="openProfile(profile.id)">Open</button>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(profile)">Rename</button>
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    (click)="openProfile(profile.id)"
+                  >
+                    Open
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(profile)">
+                    Rename
+                  </button>
                 </div>
               }
             </div>
@@ -89,7 +101,6 @@ import { STORE_OPTIONS, GAME_OPTIONS } from "./game-context";
           <p class="text-sm text-base-content/60 mt-1">{{ statusMessage }}</p>
         }
       </div>
-
     </div>
   `,
 })
@@ -97,21 +108,27 @@ export class ProfilesPageComponent {
   settings: AppSettings;
   profiles: Profile[] = [];
   activeProfileId: string | null = null;
-  newProfileName = "";
-  statusMessage = "";
+  newProfileName = '';
+  statusMessage = '';
   editingProfileId: string | null = null;
-  editingProfileName = "";
+  editingProfileName = '';
 
   get gameLabel(): string {
-    return GAME_OPTIONS.find((g) => g.id === this.settings.selectedGameId)?.label ?? this.settings.selectedGameId;
+    return (
+      GAME_OPTIONS.find((g) => g.id === this.settings.selectedGameId)?.label ??
+      this.settings.selectedGameId
+    );
   }
 
   get storeLabel(): string {
-    return STORE_OPTIONS.find((s) => s.id === this.settings.selectedStoreId)?.label ?? this.settings.selectedStoreId;
+    return (
+      STORE_OPTIONS.find((s) => s.id === this.settings.selectedStoreId)?.label ??
+      this.settings.selectedStoreId
+    );
   }
 
   get activeProfileName(): string {
-    return this.profiles.find((profile) => profile.id === this.activeProfileId)?.name ?? "";
+    return this.profiles.find((profile) => profile.id === this.activeProfileId)?.name ?? '';
   }
 
   private readonly storage: StorageLike;
@@ -123,12 +140,12 @@ export class ProfilesPageComponent {
   }
 
   backToGameSelect(): void {
-    void this.router.navigate(["/game-select"]);
+    void this.router.navigate(['/game-select']);
   }
 
   openProfile(profileId: string): void {
     if (!profileId) {
-      this.statusMessage = "Select a profile first.";
+      this.statusMessage = 'Select a profile first.';
       return;
     }
 
@@ -136,7 +153,7 @@ export class ProfilesPageComponent {
       this.setActiveProfile(profileId, false);
     }
 
-    void this.router.navigate(["/mods"]);
+    void this.router.navigate(['/mods']);
   }
 
   createProfile(): void {
@@ -148,13 +165,13 @@ export class ProfilesPageComponent {
     );
 
     if (!result.created || !result.profile) {
-      this.statusMessage = "Enter a non-empty profile name.";
+      this.statusMessage = 'Enter a non-empty profile name.';
       return;
     }
 
     this.settings = result.settings;
     saveSettings(this.storage, this.settings);
-    this.newProfileName = "";
+    this.newProfileName = '';
     this.statusMessage = `Created profile '${result.profile.name}'.`;
     this.refreshProfiles();
   }
@@ -180,13 +197,13 @@ export class ProfilesPageComponent {
     );
     saveSettings(this.storage, this.settings);
     this.editingProfileId = null;
-    this.editingProfileName = "";
+    this.editingProfileName = '';
     this.refreshProfiles();
   }
 
   cancelEdit(): void {
     this.editingProfileId = null;
-    this.editingProfileName = "";
+    this.editingProfileName = '';
   }
 
   setActiveProfile(profileId: string, updateMessage = true): void {
@@ -198,7 +215,7 @@ export class ProfilesPageComponent {
     );
     saveSettings(this.storage, this.settings);
     if (updateMessage) {
-      this.statusMessage = "Active profile updated.";
+      this.statusMessage = 'Active profile updated.';
     }
     this.refreshProfiles();
   }
@@ -215,7 +232,7 @@ export class ProfilesPageComponent {
   }
 
   private resolveStorage(): StorageLike {
-    if (typeof localStorage !== "undefined") {
+    if (typeof localStorage !== 'undefined') {
       return localStorage;
     }
 

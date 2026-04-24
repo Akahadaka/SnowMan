@@ -1,35 +1,35 @@
-import { Component, DoCheck, OnInit } from "@angular/core";
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
-import { buildCandidatesForApprovedMod } from "./approved-mods.logic";
-import { executeControlledDeploy } from "./deploy-execution";
-import { GAME_OPTIONS, STORE_OPTIONS } from "./game-context";
-import { launchWithManagedDeploy } from "./launcher.bridge";
-import { getModsForProfile } from "./mod.import";
-import type { ModEntry } from "./mod.types";
-import { getAppTitle } from "./ping.bridge";
-import { getProfiles } from "./profiles.persistence";
-import type { Profile } from "./profile.types";
-import { deriveLaunchContext } from "./profiles-page.logic";
-import { shellNavigationItems } from "./shell.navigation";
+import { Component, DoCheck, OnInit } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { buildCandidatesForApprovedMod } from './approved-mods.logic';
+import { executeControlledDeploy } from './deploy-execution';
+import { GAME_OPTIONS, STORE_OPTIONS } from './game-context';
+import { launchWithManagedDeploy } from './launcher.bridge';
+import { getModsForProfile } from './mod.import';
+import type { ModEntry } from './mod.types';
+import { getAppTitle } from './ping.bridge';
+import { getProfiles } from './profiles.persistence';
+import type { Profile } from './profile.types';
+import { deriveLaunchContext } from './profiles-page.logic';
+import { shellNavigationItems } from './shell.navigation';
 import {
   loadSettings,
   SETTINGS_STORAGE_KEY,
   type AppSettings,
   type StorageLike,
-} from "./settings.persistence";
-import { resolveStartupRoute } from "./startup.routing";
+} from './settings.persistence';
+import { resolveStartupRoute } from './startup.routing';
 
 @Component({
-  selector: "app-root",
+  selector: 'app-root',
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
-  templateUrl: "./app.component.html",
+  templateUrl: './app.component.html',
 })
 export class AppComponent implements OnInit, DoCheck {
   title = getAppTitle();
   navigationItems = shellNavigationItems;
   settings: AppSettings;
   profiles: Profile[] = [];
-  shellStatusMessage = "";
+  shellStatusMessage = '';
 
   private readonly storage: StorageLike;
   private lastSettingsSnapshot: string | null = null;
@@ -43,12 +43,12 @@ export class AppComponent implements OnInit, DoCheck {
   get activeProfileId(): string {
     return (
       this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
-        ?.activeProfileId ?? ""
+        ?.activeProfileId ?? ''
     );
   }
 
   get activeProfileName(): string {
-    return this.profiles.find((profile) => profile.id === this.activeProfileId)?.name ?? "";
+    return this.profiles.find((profile) => profile.id === this.activeProfileId)?.name ?? '';
   }
 
   get hasActiveProfile(): boolean {
@@ -142,13 +142,13 @@ export class AppComponent implements OnInit, DoCheck {
     );
 
     if (!launchContext.canLaunch || !launchContext.executablePath) {
-      this.shellStatusMessage = launchContext.reason ?? "Launch blocked by profile context.";
+      this.shellStatusMessage = launchContext.reason ?? 'Launch blocked by profile context.';
       return;
     }
 
     const installPath =
       this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
-        ?.installPath ?? "";
+        ?.installPath ?? '';
 
     if (!withMods) {
       const launched = await launchWithManagedDeploy(
@@ -158,16 +158,16 @@ export class AppComponent implements OnInit, DoCheck {
         [],
       );
       this.shellStatusMessage = launched
-        ? "Game launched (vanilla)."
-        : "Failed to launch game executable.";
+        ? 'Game launched (vanilla).'
+        : 'Failed to launch game executable.';
       return;
     }
 
     const candidates = this.installedMods.flatMap((mod) => buildCandidatesForApprovedMod(mod));
     const deployResult = executeControlledDeploy(candidates, new Date().toISOString());
 
-    if (deployResult.status === "blocked") {
-      this.shellStatusMessage = "Launch blocked: mod deploy preflight failed.";
+    if (deployResult.status === 'blocked') {
+      this.shellStatusMessage = 'Launch blocked: mod deploy preflight failed.';
       return;
     }
 
@@ -178,12 +178,12 @@ export class AppComponent implements OnInit, DoCheck {
       deployResult.plannedCopies,
     );
     this.shellStatusMessage = launched
-      ? "Game launched. Mods deployed; backups will be restored when the game exits."
-      : "Failed to launch game executable.";
+      ? 'Game launched. Mods deployed; backups will be restored when the game exits.'
+      : 'Failed to launch game executable.';
   }
 
   private resolveStorage(): StorageLike {
-    if (typeof localStorage !== "undefined") {
+    if (typeof localStorage !== 'undefined') {
       return localStorage;
     }
 

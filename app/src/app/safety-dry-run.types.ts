@@ -1,4 +1,4 @@
-import type { InstallStrategy } from "./mod.types";
+import type { InstallStrategy } from './mod.types';
 
 export interface DeployCandidate {
   modId: string;
@@ -21,17 +21,17 @@ export interface PlannedBackupOperation {
 }
 
 export type SafetyIssueCode =
-  | "path-traversal"
-  | "protected-target"
-  | "target-collision"
-  | "empty-target";
+  | 'path-traversal'
+  | 'protected-target'
+  | 'target-collision'
+  | 'empty-target';
 
 export interface SafetyIssue {
   code: SafetyIssueCode;
   message: string;
   targetPath?: string;
   modId?: string;
-  severity: "error" | "warning";
+  severity: 'error' | 'warning';
 }
 
 export interface SafetyDryRunReport {

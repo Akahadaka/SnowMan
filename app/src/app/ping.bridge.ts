@@ -1,9 +1,9 @@
-import type { TauriInvokeFn } from "./tauri.bridge";
+import type { TauriInvokeFn } from './tauri.bridge';
 
 export function getAppTitle(): string {
-  return "SnowMan";
+  return 'SnowMan';
 }
 
 export async function fetchPing(invokeFn: TauriInvokeFn): Promise<string> {
-  return invokeFn("ping");
+  return invokeFn('ping');
 }

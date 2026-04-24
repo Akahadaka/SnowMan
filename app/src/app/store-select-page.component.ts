@@ -1,17 +1,17 @@
-import { Component } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { Router } from "@angular/router";
-import { STORE_OPTIONS, type StoreOption } from "./game-context";
-import { STEAM_STORE_ID, type StoreId } from "./game-discovery.types";
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { STORE_OPTIONS, type StoreOption } from './game-context';
+import { STEAM_STORE_ID, type StoreId } from './game-discovery.types';
 import {
   loadSettings,
   mergeSettings,
   saveSettings,
   type StorageLike,
-} from "./settings.persistence";
+} from './settings.persistence';
 
 @Component({
-  selector: "app-store-select-page",
+  selector: 'app-store-select-page',
   standalone: true,
   imports: [FormsModule],
   template: `
@@ -26,11 +26,13 @@ import {
           <fieldset class="border-none m-0 p-0 flex flex-col gap-3 mb-2">
             <legend class="sr-only">Store</legend>
             @for (store of storeOptions; track store.id) {
-              <label class="flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer font-medium text-base-content transition-colors"
-                     [class.border-primary]="selectedStoreId === store.id"
-                     [class.bg-primary]="selectedStoreId === store.id"
-                     [class.bg-opacity-5]="selectedStoreId === store.id"
-                     [class.border-base-300]="selectedStoreId !== store.id">
+              <label
+                class="flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer font-medium text-base-content transition-colors"
+                [class.border-primary]="selectedStoreId === store.id"
+                [class.bg-primary]="selectedStoreId === store.id"
+                [class.bg-opacity-5]="selectedStoreId === store.id"
+                [class.border-base-300]="selectedStoreId !== store.id"
+              >
                 <input
                   type="radio"
                   class="radio radio-primary radio-sm"
@@ -67,18 +69,18 @@ export class StoreSelectPageComponent {
   }
 
   back(): void {
-    void this.router.navigate(["/game-select"]);
+    void this.router.navigate(['/game-select']);
   }
 
   continueToDiscovery(): void {
     const current = loadSettings(this.storage);
     const updated = mergeSettings({ selectedStoreId: this.selectedStoreId }, current);
     saveSettings(this.storage, updated);
-    void this.router.navigate(["/discovery-loading"]);
+    void this.router.navigate(['/discovery-loading']);
   }
 
   private resolveStorage(): StorageLike {
-    if (typeof localStorage !== "undefined") return localStorage;
+    if (typeof localStorage !== 'undefined') return localStorage;
     const store = new Map<string, string>();
     return { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
   }

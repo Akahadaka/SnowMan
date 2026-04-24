@@ -1,17 +1,17 @@
-import type { GameId, StoreId } from "./game-discovery.types";
-import type { ModEntry, ModManifest, ModsMap } from "./mod.types";
-import type { DeployCandidate } from "./safety-dry-run.types";
-import { mergeSettings, type AppSettings } from "./settings.persistence";
+import type { GameId, StoreId } from './game-discovery.types';
+import type { ModEntry, ModManifest, ModsMap } from './mod.types';
+import type { DeployCandidate } from './safety-dry-run.types';
+import { mergeSettings, type AppSettings } from './settings.persistence';
 
 function getFolderName(folderPath: string): string {
-  return folderPath.replace(/\\/g, "/").replace(/\/$/, "").split("/").pop() ?? folderPath;
+  return folderPath.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() ?? folderPath;
 }
 
 export function importModFromFolder(folderPath: string, manifest?: ModManifest): ModEntry {
   if (!folderPath.trim()) {
     const error: { code: string; message: string } = {
-      code: "empty-path",
-      message: "Mod folder path must not be empty.",
+      code: 'empty-path',
+      message: 'Mod folder path must not be empty.',
     };
     throw error;
   }
@@ -35,15 +35,15 @@ export function buildDeployCandidates(
 ): DeployCandidate[] {
   if (!modEntry.sourceFolderPath.trim()) {
     const error: { code: string; message: string } = {
-      code: "empty-path",
-      message: "Mod sourceFolderPath must not be empty.",
+      code: 'empty-path',
+      message: 'Mod sourceFolderPath must not be empty.',
     };
     throw error;
   }
 
   return files.map((relPath) => {
-    const normalizedInstall = gameInstallPath.replace(/\\/g, "/").replace(/\/$/, "");
-    const sourcePath = `${modEntry.sourceFolderPath.replace(/\\/g, "/").replace(/\/$/, "")}/${relPath}`;
+    const normalizedInstall = gameInstallPath.replace(/\\/g, '/').replace(/\/$/, '');
+    const sourcePath = `${modEntry.sourceFolderPath.replace(/\\/g, '/').replace(/\/$/, '')}/${relPath}`;
     const targetPath = `${normalizedInstall}/${relPath}`;
     const targetExists = existsChecker ? existsChecker(targetPath) : false;
 

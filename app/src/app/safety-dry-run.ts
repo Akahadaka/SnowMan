@@ -4,24 +4,24 @@ import type {
   PlannedCopyOperation,
   SafetyDryRunReport,
   SafetyIssue,
-} from "./safety-dry-run.types";
+} from './safety-dry-run.types';
 
-const PROTECTED_FILES = new Set(["snowrunner.exe", "engine.pak"]);
+const PROTECTED_FILES = new Set(['snowrunner.exe', 'engine.pak']);
 
 function normalizeTargetPath(value: string): string {
   return value
-    .replace(/\\+/g, "/")
-    .replace(/^\/+|\/+$/g, "")
+    .replace(/\\+/g, '/')
+    .replace(/^\/+|\/+$/g, '')
     .toLowerCase();
 }
 
 function hasTraversal(value: string): boolean {
-  return value.split("/").some((segment) => segment === "..");
+  return value.split('/').some((segment) => segment === '..');
 }
 
 function isProtectedTarget(normalizedPath: string): boolean {
-  const parts = normalizedPath.split("/");
-  const filename = parts[parts.length - 1] ?? "";
+  const parts = normalizedPath.split('/');
+  const filename = parts[parts.length - 1] ?? '';
   return PROTECTED_FILES.has(filename);
 }
 
@@ -37,31 +37,31 @@ export function runSafetyDryRun(candidates: DeployCandidate[]): SafetyDryRunRepo
 
     if (!normalizedTargetPath) {
       issues.push({
-        code: "empty-target",
-        message: "Target path is empty.",
+        code: 'empty-target',
+        message: 'Target path is empty.',
         modId: candidate.modId,
-        severity: "error",
+        severity: 'error',
       });
       continue;
     }
 
     if (hasTraversal(normalizedTargetPath)) {
       issues.push({
-        code: "path-traversal",
+        code: 'path-traversal',
         message: `Path traversal detected for target '${candidate.relativeTargetPath}'.`,
         targetPath: normalizedTargetPath,
         modId: candidate.modId,
-        severity: "error",
+        severity: 'error',
       });
     }
 
     if (isProtectedTarget(normalizedTargetPath)) {
       issues.push({
-        code: "protected-target",
+        code: 'protected-target',
         message: `Protected target '${normalizedTargetPath}' cannot be modified.`,
         targetPath: normalizedTargetPath,
         modId: candidate.modId,
-        severity: "error",
+        severity: 'error',
       });
     }
 
@@ -73,7 +73,7 @@ export function runSafetyDryRun(candidates: DeployCandidate[]): SafetyDryRunRepo
       sourcePath: candidate.sourcePath,
       targetPath: normalizedTargetPath,
       needsBackup: candidate.targetExists,
-      installStrategy: candidate.installStrategy ?? "direct-copy",
+      installStrategy: candidate.installStrategy ?? 'direct-copy',
     });
 
     if (candidate.targetExists) {
@@ -91,17 +91,17 @@ export function runSafetyDryRun(candidates: DeployCandidate[]): SafetyDryRunRepo
 
     for (const modId of uniqueModIds) {
       issues.push({
-        code: "target-collision",
+        code: 'target-collision',
         message: `Multiple mods target '${targetPath}'.`,
         targetPath,
         modId,
-        severity: "error",
+        severity: 'error',
       });
     }
   }
 
   return {
-    canProceed: !issues.some((issue) => issue.severity === "error"),
+    canProceed: !issues.some((issue) => issue.severity === 'error'),
     plannedCopies,
     plannedBackups,
     issues,

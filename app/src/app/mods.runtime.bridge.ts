@@ -1,11 +1,11 @@
-import { tauriInvoke } from "./tauri.bridge";
+import { tauriInvoke } from './tauri.bridge';
 
 export async function downloadAndExtractZip(
   url: string,
   destinationPath: string,
 ): Promise<string | null> {
   try {
-    const extractedPath = await tauriInvoke("download_and_extract_zip", {
+    const extractedPath = await tauriInvoke('download_and_extract_zip', {
       url,
       destinationPath,
     });

@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest run",
     "lint": "eslint src",
-    "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.html\" \"src/**/*.css\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.html\" \"src/**/*.css\" \"*.js\" \"*.mjs\"",
     "tauri": "tauri"
   },
   "private": true,

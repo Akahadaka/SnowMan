@@ -1,6 +1,6 @@
-import { SNOWRUNNER_GAME_ID, type GameId } from "./game-discovery.types";
-import type { GameProvider, GameRegistry } from "./game-provider";
-import { snowrunnerProvider } from "./snowrunner.provider";
+import { SNOWRUNNER_GAME_ID, type GameId } from './game-discovery.types';
+import type { GameProvider, GameRegistry } from './game-provider';
+import { snowrunnerProvider } from './snowrunner.provider';
 
 export function createGameRegistry(): GameRegistry {
   return {

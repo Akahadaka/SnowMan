@@ -1,18 +1,18 @@
-import { Component, OnInit } from "@angular/core";
-import { Router } from "@angular/router";
-import { discoverGameInstallPath } from "./game-discovery.service";
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { discoverGameInstallPath } from './game-discovery.service';
 import {
   loadSettings,
   mergeSettings,
   saveSettings,
   setInstallPathForStore,
   type StorageLike,
-} from "./settings.persistence";
+} from './settings.persistence';
 
-type DiscoveryState = "searching" | "found" | "not-found";
+type DiscoveryState = 'searching' | 'found' | 'not-found';
 
 @Component({
-  selector: "app-discovery-loading-page",
+  selector: 'app-discovery-loading-page',
   standalone: true,
   template: `
     <section class="flex flex-col items-center px-6 pt-12 min-h-full">
@@ -21,7 +21,7 @@ type DiscoveryState = "searching" | "found" | "not-found";
         <p class="text-base-content/60 m-0">{{ statusText }}</p>
       </header>
 
-      @if (state === "searching") {
+      @if (state === 'searching') {
         <progress
           class="progress progress-primary w-80"
           role="progressbar"
@@ -29,12 +29,12 @@ type DiscoveryState = "searching" | "found" | "not-found";
         ></progress>
       }
 
-      @if (state === "not-found") {
+      @if (state === 'not-found') {
         <div class="card bg-base-100 border border-base-300 w-full max-w-lg mt-4">
           <div class="card-body">
             <p class="text-base-content/60 leading-relaxed">
-              SnowRunner could not be located automatically. Please enter the install
-              path manually in Settings.
+              SnowRunner could not be located automatically. Please enter the install path manually
+              in Settings.
             </p>
             <div class="card-actions justify-end mt-2">
               <button type="button" class="btn btn-ghost" (click)="back()">← Back</button>
@@ -46,7 +46,7 @@ type DiscoveryState = "searching" | "found" | "not-found";
         </div>
       }
 
-      @if (state === "found") {
+      @if (state === 'found') {
         <div class="card bg-base-100 border border-base-300 w-full max-w-lg mt-4">
           <div class="card-body">
             <p class="font-mono text-sm text-success break-all m-0">{{ foundPath }}</p>
@@ -57,19 +57,19 @@ type DiscoveryState = "searching" | "found" | "not-found";
   `,
 })
 export class DiscoveryLoadingPageComponent implements OnInit {
-  state: DiscoveryState = "searching";
-  foundPath = "";
+  state: DiscoveryState = 'searching';
+  foundPath = '';
 
   get headingText(): string {
-    if (this.state === "found") return "SnowRunner Found";
-    if (this.state === "not-found") return "Game Not Found";
-    return "Finding SnowRunner…";
+    if (this.state === 'found') return 'SnowRunner Found';
+    if (this.state === 'not-found') return 'Game Not Found';
+    return 'Finding SnowRunner…';
   }
 
   get statusText(): string {
-    if (this.state === "found") return "Install path detected. Opening your profiles…";
-    if (this.state === "not-found") return "Automatic detection did not find an install.";
-    return "Scanning common install locations…";
+    if (this.state === 'found') return 'Install path detected. Opening your profiles…';
+    if (this.state === 'not-found') return 'Automatic detection did not find an install.';
+    return 'Scanning common install locations…';
   }
 
   private readonly storage: StorageLike;
@@ -83,21 +83,21 @@ export class DiscoveryLoadingPageComponent implements OnInit {
   }
 
   back(): void {
-    void this.router.navigate(["/store-select"]);
+    void this.router.navigate(['/store-select']);
   }
 
   goToSettings(): void {
-    void this.router.navigate(["/settings"]);
+    void this.router.navigate(['/settings']);
   }
 
   private async runDiscovery(): Promise<void> {
     const settings = loadSettings(this.storage);
     const result = discoverGameInstallPath(settings.selectedGameId, settings);
 
-    if (result.status === "found" && result.validCandidates.length > 0) {
+    if (result.status === 'found' && result.validCandidates.length > 0) {
       const best = result.validCandidates[0];
       this.foundPath = best.path;
-      this.state = "found";
+      this.state = 'found';
 
       let updated = setInstallPathForStore(
         settings,
@@ -110,14 +110,14 @@ export class DiscoveryLoadingPageComponent implements OnInit {
 
       // Brief pause so user sees the "found" state before navigating
       await new Promise<void>((resolve) => setTimeout(resolve, 900));
-      void this.router.navigate(["/profiles"]);
+      void this.router.navigate(['/profiles']);
     } else {
-      this.state = "not-found";
+      this.state = 'not-found';
     }
   }
 
   private resolveStorage(): StorageLike {
-    if (typeof localStorage !== "undefined") return localStorage;
+    if (typeof localStorage !== 'undefined') return localStorage;
     const store = new Map<string, string>();
     return { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
   }

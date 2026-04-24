@@ -1,16 +1,16 @@
-import { Component } from "@angular/core";
-import { Router } from "@angular/router";
-import { GAME_OPTIONS, type GameOption } from "./game-context";
-import { SNOWRUNNER_GAME_ID } from "./game-discovery.types";
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { GAME_OPTIONS, type GameOption } from './game-context';
+import { SNOWRUNNER_GAME_ID } from './game-discovery.types';
 import {
   loadSettings,
   mergeSettings,
   saveSettings,
   type StorageLike,
-} from "./settings.persistence";
+} from './settings.persistence';
 
 @Component({
-  selector: "app-game-select-page",
+  selector: 'app-game-select-page',
   standalone: true,
   template: `
     <section class="flex flex-col items-center px-6 pt-12 min-h-full">
@@ -55,11 +55,11 @@ export class GameSelectPageComponent {
     const current = loadSettings(this.storage);
     const updated = mergeSettings({ selectedGameId: game.id }, current);
     saveSettings(this.storage, updated);
-    void this.router.navigate(["/store-select"]);
+    void this.router.navigate(['/store-select']);
   }
 
   private resolveStorage(): StorageLike {
-    if (typeof localStorage !== "undefined") return localStorage;
+    if (typeof localStorage !== 'undefined') return localStorage;
     const store = new Map<string, string>();
     return { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
   }
