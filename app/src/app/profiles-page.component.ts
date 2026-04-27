@@ -64,7 +64,7 @@ import { STORE_OPTIONS, GAME_OPTIONS } from './game-context';
                 <span class="font-semibold flex-1 text-base-content">
                   {{ profile.name }}
                   @if (profile.id === activeProfileId) {
-                    <span class="badge badge-primary badge-outline badge-xs ml-2">Active</span>
+                    <span class="badge badge-primary badge-outline badge-sm px-2 ml-2">Active</span>
                   }
                 </span>
                 <div class="flex gap-2">
