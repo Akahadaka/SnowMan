@@ -8,7 +8,9 @@
     <div
       class="grid gap-4 max-[900px]:flex max-[900px]:flex-wrap max-[900px]:items-start max-[900px]:justify-between max-[900px]:gap-3"
     >
-      <div class="grid min-w-0 flex-1 gap-1 max-[900px]:basis-[18rem] max-[900px]:min-w-[16rem] max-[900px]:flex-[2_1_18rem]">
+      <div
+        class="grid min-w-0 flex-1 gap-1 max-[900px]:basis-[18rem] max-[900px]:min-w-[16rem] max-[900px]:flex-[2_1_18rem]"
+      >
         <p
           class="m-0 text-xs font-bold uppercase tracking-widest text-primary max-[600px]:text-[0.7rem]"
         >
@@ -17,7 +19,9 @@
         <h1 class="m-0 text-3xl font-bold leading-tight max-[900px]:text-2xl max-[600px]:text-xl">
           @if (hasActiveProfile) {
             <span class="inline min-[901px]:block">{{ title }}:</span>
-            <span class="ml-1 inline min-[901px]:ml-0 min-[901px]:block">{{ activeProfileName }}</span>
+            <span class="ml-1 inline min-[901px]:ml-0 min-[901px]:block">{{
+              activeProfileName
+            }}</span>
           } @else {
             {{ title }}
           }
@@ -37,7 +41,9 @@
             @if (shellStatusMessage) {
               <p class="text-xs text-warning m-0">{{ shellStatusMessage }}</p>
             }
-            <div class="card-actions pt-1 flex-wrap gap-2 min-[901px]:flex-col min-[901px]:flex-nowrap max-[600px]:flex-col max-[600px]:flex-nowrap">
+            <div
+              class="card-actions pt-1 flex-wrap gap-2 min-[901px]:flex-col min-[901px]:flex-nowrap max-[600px]:flex-col max-[600px]:flex-nowrap"
+            >
               <button
                 type="button"
                 class="btn btn-primary btn-sm flex-1 whitespace-nowrap px-6 min-[901px]:w-full min-[901px]:flex-none max-[600px]:w-full max-[600px]:flex-none"
