@@ -13,6 +13,8 @@ export interface CommandMap {
   deploy_launch_restore: null;
   sync_mod_catalog: null;
   search_mod_catalog: CatalogDbEntryRecord[];
+  sync_modio_catalog: null;
+  search_modio_catalog: ModioCatalogDbEntryRecord[];
   upsert_profile_mod_selection: null;
   get_profile_mod_selections: ProfileModSelectionRecord[];
 }
@@ -42,6 +44,36 @@ export interface ProfileModSelectionRecord {
   selectedOptionsJson: string;
 }
 
+export interface ModioCatalogDbEntryRecord {
+  modioId: number;
+  name: string;
+  summary: string;
+  profileUrl: string;
+  thumbnailUrl: string;
+  downloadUrl: string;
+  modfileId: number;
+  modfileVersion: string;
+  tagsJson: string;
+  dateUpdated: number;
+  downloadsTotal: number;
+  subscribersTotal: number;
+}
+
+export interface ModioCatalogDbEntryInput {
+  modioId: number;
+  name: string;
+  summary: string;
+  profileUrl: string;
+  thumbnailUrl: string;
+  downloadUrl: string;
+  modfileId: number;
+  modfileVersion: string;
+  tagsJson: string;
+  dateUpdated: number;
+  downloadsTotal: number;
+  subscribersTotal: number;
+}
+
 export type CommandName = keyof CommandMap;
 
 export interface CommandArgsMap {
@@ -63,6 +95,13 @@ export interface CommandArgsMap {
     entries: CatalogDbEntryInput[];
   };
   search_mod_catalog: {
+    query: string;
+    limit?: number;
+  };
+  sync_modio_catalog: {
+    entries: ModioCatalogDbEntryInput[];
+  };
+  search_modio_catalog: {
     query: string;
     limit?: number;
   };
@@ -90,6 +129,8 @@ export const registeredCommands: ReadonlyArray<CommandName> = [
   'deploy_launch_restore',
   'sync_mod_catalog',
   'search_mod_catalog',
+  'sync_modio_catalog',
+  'search_modio_catalog',
   'upsert_profile_mod_selection',
   'get_profile_mod_selections',
 ] as const;

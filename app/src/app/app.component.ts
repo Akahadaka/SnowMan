@@ -85,7 +85,7 @@ export class AppComponent implements OnInit, DoCheck {
         this.settings.selectedGameId,
         this.activeProfileId,
       ),
-    );
+    ).filter((mod) => mod.installState !== 'subscribed' && mod.sourceFolderPath.trim().length > 0);
   }
 
   get activeProfileSummary(): string {

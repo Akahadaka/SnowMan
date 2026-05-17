@@ -46,6 +46,7 @@ describe('settings page logic', () => {
       selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: false,
       onboardingComplete: false,
+      hasHydratedModioCache: false,
       stores: {
         steam: {
           games: {

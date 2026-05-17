@@ -4,6 +4,7 @@ import {
   buildDeployCandidates,
   getModsForProfile,
   importModFromFolder,
+  removeModFromProfile,
 } from './mod.import';
 import { SNOWRUNNER_GAME_ID, STEAM_STORE_ID } from './game-discovery.types';
 import { DEFAULT_SETTINGS } from './settings.persistence';
@@ -120,5 +121,48 @@ describe('addModToProfile and getModsForProfile', () => {
       'nonexistent',
     );
     expect(mods).toEqual({});
+  });
+
+  it('removes a mod entry from profile by id', () => {
+    const profileId = 'profile-1';
+    const withMod = addModToProfile(
+      DEFAULT_SETTINGS,
+      STEAM_STORE_ID,
+      SNOWRUNNER_GAME_ID,
+      profileId,
+      modEntry,
+    );
+
+    const removed = removeModFromProfile(
+      withMod,
+      STEAM_STORE_ID,
+      SNOWRUNNER_GAME_ID,
+      profileId,
+      modEntry.id,
+    );
+
+    const mods = getModsForProfile(removed, STEAM_STORE_ID, SNOWRUNNER_GAME_ID, profileId);
+    expect(mods).toEqual({});
+  });
+
+  it('returns unchanged settings when removing unknown mod id', () => {
+    const profileId = 'profile-1';
+    const withMod = addModToProfile(
+      DEFAULT_SETTINGS,
+      STEAM_STORE_ID,
+      SNOWRUNNER_GAME_ID,
+      profileId,
+      modEntry,
+    );
+
+    const unchanged = removeModFromProfile(
+      withMod,
+      STEAM_STORE_ID,
+      SNOWRUNNER_GAME_ID,
+      profileId,
+      'missing-mod',
+    );
+
+    expect(unchanged).toEqual(withMod);
   });
 });

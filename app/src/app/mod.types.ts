@@ -3,8 +3,13 @@ export interface ModEntry {
   name: string;
   sourceFolderPath: string;
   importedAt: string;
+  installState?: 'subscribed' | 'installed';
   description?: string;
   approvedModId?: string;
+  modioModId?: number;
+  modioProfileUrl?: string;
+  modioFileId?: number;
+  modioVersion?: string;
   selectedOptions?: Record<string, boolean>;
 }
 

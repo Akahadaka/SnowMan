@@ -44,6 +44,15 @@ Review and prioritise at the end of the initial development phase.
 
 ## mod.io Metadata and Updates
 
+- **Secure mod.io API key handling (temporary client key, then backend proxy)**
+  Continue using a low-privilege mod.io key in the client during active
+  feature development so browse/search work without blocking iteration speed.
+
+  Before release hardening, move mod.io requests behind a controlled backend
+  proxy that stores the real key server-side, enforces rate limits, and
+  supports key rotation without shipping new client builds.
+  _Raised during Iteration 11._
+
 - **Import mod.io metadata into local mod entries (English-first)**
   For mods tracked by mod.io URL or mod ID, fetch and store canonical metadata
   from mod.io (name, summary, description_plaintext, tags, stats, author,

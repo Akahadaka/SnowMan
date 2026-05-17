@@ -22,6 +22,8 @@ describe('typed Tauri command bridge', () => {
       'deploy_launch_restore',
       'sync_mod_catalog',
       'search_mod_catalog',
+      'sync_modio_catalog',
+      'search_modio_catalog',
       'upsert_profile_mod_selection',
       'get_profile_mod_selections',
     ]);

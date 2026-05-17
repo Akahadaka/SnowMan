@@ -23,6 +23,7 @@ export function importModFromFolder(folderPath: string, manifest?: ModManifest):
     name: manifest?.name ?? folderName,
     sourceFolderPath: folderPath,
     importedAt: new Date().toISOString(),
+    installState: 'installed',
     ...(manifest?.description !== undefined ? { description: manifest.description } : {}),
   };
 }
@@ -74,6 +75,43 @@ export function addModToProfile(
   const existingMods: ModsMap = (existingProfile as { mods?: ModsMap }).mods ?? {};
   const updatedMods: ModsMap = { ...existingMods, [modEntry.id]: modEntry };
   const updatedProfile = { ...existingProfile, mods: updatedMods };
+  const updatedProfiles = { ...profiles, [profileId]: updatedProfile };
+
+  return mergeSettings(
+    {
+      stores: {
+        [storeId]: {
+          games: {
+            [gameId]: { profiles: updatedProfiles },
+          },
+        },
+      },
+    },
+    settings,
+  );
+}
+
+export function removeModFromProfile(
+  settings: AppSettings,
+  storeId: StoreId,
+  gameId: GameId,
+  profileId: string,
+  modId: string,
+): AppSettings {
+  const profiles = settings.stores[storeId]?.games[gameId]?.profiles ?? {};
+  const existingProfile = profiles[profileId];
+  if (!existingProfile) {
+    return settings;
+  }
+
+  const existingMods: ModsMap = (existingProfile as { mods?: ModsMap }).mods ?? {};
+  if (!existingMods[modId]) {
+    return settings;
+  }
+
+  const restMods: ModsMap = { ...existingMods };
+  delete restMods[modId];
+  const updatedProfile = { ...existingProfile, mods: restMods };
   const updatedProfiles = { ...profiles, [profileId]: updatedProfile };
 
   return mergeSettings(

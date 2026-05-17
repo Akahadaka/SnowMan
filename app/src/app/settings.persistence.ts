@@ -26,6 +26,7 @@ export interface AppSettings {
   selectedStoreId: StoreId;
   autoBackupOnDeploy: boolean;
   onboardingComplete: boolean;
+  hasHydratedModioCache: boolean;
   stores: StoresSettingsMap;
 }
 
@@ -34,6 +35,7 @@ export interface SettingsPatch {
   selectedStoreId?: StoreId;
   autoBackupOnDeploy?: boolean;
   onboardingComplete?: boolean;
+  hasHydratedModioCache?: boolean;
   stores?: Partial<
     Record<StoreId, { games?: Partial<Record<GameId, Partial<StoreGameSettings>>> }>
   >;
@@ -46,6 +48,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedStoreId: STEAM_STORE_ID,
   autoBackupOnDeploy: true,
   onboardingComplete: false,
+  hasHydratedModioCache: false,
   stores: {},
 };
 
@@ -118,6 +121,7 @@ export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSetti
     selectedStoreId: patch.selectedStoreId ?? base.selectedStoreId,
     autoBackupOnDeploy: patch.autoBackupOnDeploy ?? base.autoBackupOnDeploy,
     onboardingComplete: patch.onboardingComplete ?? base.onboardingComplete,
+    hasHydratedModioCache: patch.hasHydratedModioCache ?? base.hasHydratedModioCache,
     stores: mergedStores,
   };
 }
