@@ -970,7 +970,10 @@ export class ModsPageComponent {
 
   private subscriptionEntryForItem(item: OnlineCatalogItem): ModEntry | undefined {
     if (item.approved) {
-      return this.modByApprovedId(this.activeProfileId, item.approved.id);
+      const approvedEntry = this.modByApprovedId(this.activeProfileId, item.approved.id);
+      if (approvedEntry) {
+        return approvedEntry;
+      }
     }
 
     if (item.modio) {

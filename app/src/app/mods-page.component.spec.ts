@@ -329,6 +329,75 @@ describe('ModsPageComponent', () => {
     expect(component.isCatalogItemInstalled(component.subscribedCatalogItems[0])).toBe(true);
   });
 
+  it('treats merged approved item as installed when only mod.io-linked installed entry exists', () => {
+    const component = new ModsPageComponent();
+    const settingsWithProfile = {
+      ...DEFAULT_SETTINGS,
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: 'D:/SnowRunner',
+              profileRootPath: 'D:/SnowRunner/profiles',
+              activeProfileId: 'profile-1',
+              profiles: {
+                'profile-1': {
+                  id: 'profile-1',
+                  name: 'Profile 1',
+                  createdAt: '2026-01-01T00:00:00.000Z',
+                  updatedAt: '2026-01-01T00:00:00.000Z',
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    (component as unknown as { settings: AppSettings }).settings = addModToProfile(
+      settingsWithProfile,
+      'steam',
+      'snowrunner',
+      'profile-1',
+      {
+        id: 'modio-182067',
+        name: 'Real Life Mod',
+        sourceFolderPath: 'D:/mods/modio-182067',
+        importedAt: '2026-01-01T00:00:00.000Z',
+        installState: 'installed',
+        modioModId: 182067,
+        modioProfileUrl: 'https://mod.io/g/snowrunner/m/real-life-mod',
+      },
+    );
+    component.modioMods = [
+      {
+        id: 182067,
+        name: 'Real Life Mod',
+        summary: 'Official mod.io summary',
+        profileUrl: 'https://mod.io/g/snowrunner/m/real-life-mod',
+        thumbnailUrl: 'https://cdn.example/thumb.jpg',
+        downloadUrl: 'https://cdn.example/mod.zip',
+        modfileId: 222,
+        modfileVersion: '2.0.0',
+        tags: ['Gameplay'],
+        dateUpdated: 1700000000,
+        downloadsTotal: 10,
+        subscribersTotal: 5,
+      },
+    ];
+    component.profiles = [
+      {
+        id: 'profile-1',
+        name: 'Profile 1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+
+    expect(component.subscribedCatalogItems).toHaveLength(1);
+    expect(component.isCatalogItemInstalled(component.subscribedCatalogItems[0])).toBe(true);
+  });
+
   it('marks installed mod update available when mod.io file id changes', () => {
     const component = new ModsPageComponent();
     const settingsWithProfile = {
