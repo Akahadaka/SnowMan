@@ -12,13 +12,13 @@ describe('resolveStartupRoute', () => {
     expect(resolveStartupRoute(DEFAULT_SETTINGS)).toBe('/game-select');
   });
 
-  it('returns /profiles when onboardingComplete is true', () => {
+  it('returns /mods when onboardingComplete is true', () => {
     const settings = mergeSettings({ onboardingComplete: true }, DEFAULT_SETTINGS);
-    expect(resolveStartupRoute(settings)).toBe('/profiles');
+    expect(resolveStartupRoute(settings)).toBe('/mods');
   });
 
-  it('returns /profiles even when no active profile exists after onboarding', () => {
+  it('returns /mods even when no active profile exists after onboarding', () => {
     const settings = mergeSettings({ onboardingComplete: true }, DEFAULT_SETTINGS);
-    expect(resolveStartupRoute(settings)).toBe('/profiles');
+    expect(resolveStartupRoute(settings)).toBe('/mods');
   });
 });
