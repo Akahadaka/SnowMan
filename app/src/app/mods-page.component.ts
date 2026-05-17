@@ -25,14 +25,43 @@ import {
   type StorageLike,
 } from './settings.persistence';
 
-type ModsTab = 'installed' | 'online';
+type ModsTab = 'installed' | 'online' | 'subscribed';
 
 type GlobalWithModioKey = typeof globalThis & { MODIO_API_KEY?: string };
+
+interface OnlineCatalogItem {
+  key: string;
+  name: string;
+  summary: string;
+  profileUrl: string;
+  thumbnailUrl: string;
+  downloadUrl: string;
+  tags: string[];
+  dateUpdated: number;
+  downloadsTotal: number;
+  subscribersTotal: number;
+  modio?: ModioCatalogItem;
+  approved?: ApprovedModDefinition;
+}
 
 const MODIO_GAME_ID = 306;
 
 function getModioApiKey(): string {
   return (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
+}
+
+function normalizeCatalogUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    return `${parsed.origin}${parsed.pathname}`.replace(/\/+$/, '').toLowerCase();
+  } catch {
+    return trimmed.split('#')[0].split('?')[0].replace(/\/+$/, '').toLowerCase();
+  }
 }
 
 @Component({
@@ -75,11 +104,21 @@ function getModioApiKey(): string {
             role="tab"
             type="button"
             class="tab"
+            [class.tab-active]="activeTab === 'subscribed'"
+            (click)="setActiveTab('subscribed')"
+          >
+            Subscribed
+            <span class="badge badge-sm badge-ghost ml-1">{{ subscribedMods.length }}</span>
+          </button>
+          <button
+            role="tab"
+            type="button"
+            class="tab"
             [class.tab-active]="activeTab === 'online'"
             (click)="setActiveTab('online')"
           >
             Online
-            <span class="badge badge-sm badge-ghost ml-1">{{ modioMods.length }}</span>
+            <span class="badge badge-sm badge-ghost ml-1">{{ onlineCatalogItems.length }}</span>
           </button>
         </div>
 
@@ -109,15 +148,106 @@ function getModioApiKey(): string {
                   <span class="text-xs text-base-content/60">{{ mod.description }}</span>
                 }
               </div>
-              <button
-                type="button"
-                class="btn btn-outline btn-neutral btn-sm"
-                (click)="updateMod(mod)"
-              >
-                Update
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-neutral btn-sm"
+                  [class.loading]="isStoredModBusy(mod, 'update')"
+                  [disabled]="!isUpdateAvailable(mod) || isStoredModBusy(mod)"
+                  (click)="updateMod(mod)"
+                >
+                  {{ isStoredModBusy(mod, 'update') ? 'Updating...' : 'Update' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-error btn-sm"
+                  [disabled]="isStoredModBusy(mod)"
+                  (click)="removeInstalledMod(mod)"
+                >
+                  {{ mod.modioModId || mod.approvedModId ? 'Unsubscribe' : 'Remove' }}
+                </button>
+              </div>
             </div>
           }
+        </div>
+      } @else if (activeTab === 'subscribed') {
+        <div class="flex-1 overflow-y-auto">
+          @if (subscribedCatalogItems.length === 0) {
+            <p class="text-base-content/60 text-sm px-6 py-5">
+              No subscribed mods yet. Browse Online to subscribe.
+            </p>
+          }
+          <div class="grid gap-2 px-6 py-4">
+            @for (item of subscribedCatalogItems; track item.key) {
+              <div class="border border-base-300 rounded-box p-3">
+                <div class="flex items-start gap-3">
+                  <div
+                    class="w-28 h-16 shrink-0 rounded-md overflow-hidden border border-base-300 bg-base-200"
+                  >
+                    @if (item.thumbnailUrl) {
+                      <img
+                        [src]="item.thumbnailUrl"
+                        [alt]="item.name"
+                        class="w-full h-full object-cover"
+                      />
+                    } @else {
+                      <div
+                        class="w-full h-full flex items-center justify-center text-[11px] text-base-content/50"
+                      >
+                        No image
+                      </div>
+                    }
+                  </div>
+
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="font-semibold m-0">{{ item.name }}</p>
+                        <p class="text-xs text-base-content/60 m-0 mt-0.5 line-clamp-2">
+                          {{ item.summary || 'No summary provided.' }}
+                        </p>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          class="btn btn-primary btn-xs"
+                          [class.loading]="isOnlineItemBusy(item, 'install')"
+                          [disabled]="isOnlineItemBusy(item)"
+                          (click)="installSubscribedItem(item)"
+                        >
+                          {{
+                            isOnlineItemBusy(item, 'install')
+                              ? 'Downloading...'
+                              : isCatalogItemInstalled(item)
+                                ? 'Reinstall'
+                                : 'Install'
+                          }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline btn-error btn-xs"
+                          [disabled]="isOnlineItemBusy(item)"
+                          (click)="toggleModioSubscription(item)"
+                        >
+                          Unsubscribe
+                        </button>
+                      </div>
+                    </div>
+
+                    @if (isOnlineItemBusy(item, 'install')) {
+                      <p class="text-xs text-info m-0 mt-2">Downloading and extracting...</p>
+                    }
+
+                    @if (item.tags.length > 0) {
+                      <p class="text-xs text-base-content/50 m-0 mt-1">
+                        {{ item.tags.slice(0, 4).join(' • ') }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
         </div>
       } @else {
         <div class="flex-1 overflow-y-auto">
@@ -128,14 +258,14 @@ function getModioApiKey(): string {
               <p class="text-xs text-base-content/60 m-0">Loading mod.io results…</p>
             } @else if (modioError) {
               <p class="text-xs text-warning m-0">{{ modioError }}</p>
-            } @else if (modioMods.length === 0) {
-              <p class="text-xs text-base-content/60 m-0">No mod.io results for this query.</p>
+            } @else if (onlineCatalogItems.length === 0) {
+              <p class="text-xs text-base-content/60 m-0">No catalog results for this query.</p>
             } @else {
               <div class="grid gap-2">
-                @for (item of modioMods; track item.id) {
+                @for (item of onlineCatalogItems; track item.key) {
                   <div
                     class="border border-base-300 rounded-box p-3 cursor-pointer hover:bg-primary/5"
-                    (click)="toggleModioExpand(item.id)"
+                    (click)="toggleOnlineExpand(item.key)"
                   >
                     <div class="flex items-start gap-3">
                       <div
@@ -169,9 +299,17 @@ function getModioApiKey(): string {
                             class="btn btn-xs"
                             [class.btn-primary]="!isModioSubscribed(item)"
                             [class.btn-outline]="isModioSubscribed(item)"
+                            [class.loading]="isOnlineItemBusy(item, 'subscribe')"
+                            [disabled]="isOnlineItemBusy(item)"
                             (click)="$event.stopPropagation(); toggleModioSubscription(item)"
                           >
-                            {{ isModioSubscribed(item) ? 'Unsubscribe' : 'Subscribe' }}
+                            {{
+                              isOnlineItemBusy(item, 'subscribe')
+                                ? 'Subscribing...'
+                                : isModioSubscribed(item)
+                                  ? 'Unsubscribe'
+                                  : 'Subscribe'
+                            }}
                           </button>
                         </div>
 
@@ -182,26 +320,32 @@ function getModioApiKey(): string {
                         }
 
                         <p class="text-[11px] text-base-content/40 m-0 mt-1">
-                          Downloads: {{ item.downloadsTotal }} • Subscribers:
-                          {{ item.subscribersTotal }}
+                          Downloads: {{ item.downloadsTotal }}
+                          @if (item.subscribersTotal > 0) {
+                            <span> • Subscribers: {{ item.subscribersTotal }}</span>
+                          }
                         </p>
 
                         <p class="text-[11px] text-base-content/40 m-0 mt-1">
                           {{
-                            expandedModioId === item.id ? 'Click to collapse' : 'Click for details'
+                            expandedOnlineKey === item.key
+                              ? 'Click to collapse'
+                              : 'Click for details'
                           }}
                         </p>
                       </div>
                     </div>
 
-                    @if (expandedModioId === item.id) {
+                    @if (expandedOnlineKey === item.key) {
                       <div
                         class="mt-3 pt-3 border-t border-base-300/70 text-xs text-base-content/70"
                       >
                         <p class="m-0 mb-2">
                           {{ item.summary || 'No additional description available.' }}
                         </p>
-                        <p class="m-0">Updated (epoch): {{ item.dateUpdated }}</p>
+                        @if (item.dateUpdated > 0) {
+                          <p class="m-0">Updated (epoch): {{ item.dateUpdated }}</p>
+                        }
                         <p class="m-0 mt-1 break-all">Profile: {{ item.profileUrl || 'N/A' }}</p>
                         @if (item.downloadUrl) {
                           <p class="m-0 mt-1 break-all">Download: {{ item.downloadUrl }}</p>
@@ -210,6 +354,54 @@ function getModioApiKey(): string {
                             No downloadable file currently available.
                           </p>
                         }
+
+                        @if (item.approved) {
+                          <div class="mt-3 p-3 rounded-box bg-base-200/70">
+                            <p class="m-0 font-semibold text-base-content">
+                              SnowMan managed install
+                            </p>
+                            <p class="m-0 mt-1">{{ item.approved.description }}</p>
+                            @if (item.approved.options.length > 0) {
+                              @if (approvedEntryForItem(item); as existing) {
+                                <div class="grid grid-cols-2 gap-1.5 mt-3">
+                                  @for (option of item.approved.options; track option.id) {
+                                    <label
+                                      class="flex items-center gap-2 text-sm text-base-content cursor-pointer"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        class="checkbox checkbox-xs"
+                                        [checked]="isOptionSelected(existing, option)"
+                                        [disabled]="isOptionDisabled(option)"
+                                        (click)="$event.stopPropagation()"
+                                        (change)="
+                                          toggleOption(
+                                            activeProfileId,
+                                            item.approved.id,
+                                            option.id,
+                                            $any($event.target).checked
+                                          )
+                                        "
+                                      />
+                                      <span>{{ option.label }}</span>
+                                    </label>
+                                  }
+                                </div>
+                              } @else {
+                                <div class="mt-2">
+                                  @for (option of item.approved.options; track option.id) {
+                                    <p class="m-0 mt-1">
+                                      {{ option.label }}
+                                      @if (option.lockedChecked) {
+                                        <span class="text-base-content/50"> • included</span>
+                                      }
+                                    </p>
+                                  }
+                                </div>
+                              }
+                            }
+                          </div>
+                        }
                       </div>
                     }
                   </div>
@@ -217,65 +409,6 @@ function getModioApiKey(): string {
               </div>
             }
           </div>
-
-          <div class="divider my-0">Curated managed installs</div>
-
-          @for (approved of approvedMods; track approved.id) {
-            <div class="border-b border-base-300">
-              <div
-                class="flex items-center px-6 py-3.5 cursor-pointer select-none hover:bg-primary/5"
-                (click)="toggleExpand(approved.id)"
-              >
-                <span class="font-semibold text-base-content flex-1">{{ approved.name }}</span>
-                <span class="text-base-content/50 text-xs ml-auto">{{
-                  expandedModId === approved.id ? '▲' : '▼'
-                }}</span>
-              </div>
-
-              @if (expandedModId === approved.id) {
-                <div class="px-6 pb-4 border-t border-base-300/50">
-                  <p class="text-sm text-base-content/60 mt-2 mb-1">{{ approved.description }}</p>
-                  <p class="text-xs text-primary break-all mb-2">{{ approved.modIoUrl }}</p>
-
-                  @if (approved.options.length > 0) {
-                    @if (modByApprovedId(activeProfileId, approved.id); as existing) {
-                      <div class="grid grid-cols-2 gap-1.5 mb-3">
-                        @for (option of approved.options; track option.id) {
-                          <label
-                            class="flex items-center gap-2 text-sm text-base-content cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              class="checkbox checkbox-xs"
-                              [checked]="isOptionSelected(existing, option)"
-                              [disabled]="isOptionDisabled(option)"
-                              (change)="
-                                toggleOption(
-                                  activeProfileId,
-                                  approved.id,
-                                  option.id,
-                                  $any($event.target).checked
-                                )
-                              "
-                            />
-                            <span>{{ option.label }}</span>
-                          </label>
-                        }
-                      </div>
-                    }
-                  }
-
-                  <button
-                    type="button"
-                    class="btn btn-primary btn-sm"
-                    (click)="addApprovedMod(activeProfileId, approved)"
-                  >
-                    {{ modByApprovedId(activeProfileId, approved.id) ? 'Re-download' : 'Download' }}
-                  </button>
-                </div>
-              }
-            </div>
-          }
         </div>
       }
 
@@ -289,8 +422,9 @@ function getModioApiKey(): string {
 })
 export class ModsPageComponent {
   activeTab: ModsTab = 'installed';
-  expandedModId: string | null = null;
-  expandedModioId: number | null = null;
+  expandedOnlineKey: string | null = null;
+  busyItemKey: string | null = null;
+  busyItemAction: 'subscribe' | 'install' | 'update' | null = null;
   statusMessage = '';
   searchQuery = '';
   modioMods: ModioCatalogItem[] = [];
@@ -308,6 +442,9 @@ export class ModsPageComponent {
     this.settings = loadSettings(this.storage);
     this.refreshProfiles();
     void this.initializeCatalog();
+    if (getModioApiKey().trim()) {
+      void this.loadModioCatalog();
+    }
   }
 
   get activeProfileId(): string {
@@ -331,7 +468,77 @@ export class ModsPageComponent {
         this.settings.selectedGameId,
         this.activeProfileId,
       ),
-    );
+    ).filter((mod) => this.isInstalledModEntry(mod));
+  }
+
+  get subscribedMods(): ModEntry[] {
+    if (!this.activeProfileId) return [];
+    return Object.values(
+      getModsForProfile(
+        this.settings,
+        this.settings.selectedStoreId,
+        this.settings.selectedGameId,
+        this.activeProfileId,
+      ),
+    ).filter((mod) => this.isSubscriptionTrackedMod(mod));
+  }
+
+  get subscribedCatalogItems(): OnlineCatalogItem[] {
+    return this.subscribedMods.map((mod) => this.catalogItemForMod(mod));
+  }
+
+  get onlineCatalogItems(): OnlineCatalogItem[] {
+    const merged = new Map<string, OnlineCatalogItem>();
+
+    for (const modio of this.modioMods) {
+      const normalizedUrl = normalizeCatalogUrl(modio.profileUrl);
+      const key = normalizedUrl ? `catalog:${normalizedUrl}` : `modio:${modio.id}`;
+      merged.set(key, {
+        key,
+        name: modio.name,
+        summary: modio.summary,
+        profileUrl: modio.profileUrl,
+        thumbnailUrl: modio.thumbnailUrl,
+        downloadUrl: modio.downloadUrl,
+        tags: modio.tags,
+        dateUpdated: modio.dateUpdated,
+        downloadsTotal: modio.downloadsTotal,
+        subscribersTotal: modio.subscribersTotal,
+        modio,
+      });
+    }
+
+    for (const approved of this.approvedMods) {
+      const normalizedUrl = normalizeCatalogUrl(approved.modIoUrl);
+      const key = normalizedUrl ? `catalog:${normalizedUrl}` : `approved:${approved.id}`;
+      const existing = merged.get(key);
+
+      if (existing) {
+        merged.set(key, {
+          ...existing,
+          approved,
+          profileUrl: existing.profileUrl || approved.modIoUrl,
+          downloadUrl: existing.downloadUrl || approved.downloadUrl,
+        });
+        continue;
+      }
+
+      merged.set(key, {
+        key,
+        name: approved.name,
+        summary: approved.description,
+        profileUrl: approved.modIoUrl,
+        thumbnailUrl: '',
+        downloadUrl: approved.downloadUrl,
+        tags: [],
+        dateUpdated: 0,
+        downloadsTotal: 0,
+        subscribersTotal: 0,
+        approved,
+      });
+    }
+
+    return Array.from(merged.values());
   }
 
   modByApprovedId(profileId: string, approvedId: string): ModEntry | undefined {
@@ -347,19 +554,41 @@ export class ModsPageComponent {
     return mods.find((m) => m.approvedModId === approvedId);
   }
 
-  toggleExpand(id: string): void {
-    this.expandedModId = this.expandedModId === id ? null : id;
+  private modByModId(profileId: string, modId: string): ModEntry | undefined {
+    if (!profileId) return undefined;
+    return getModsForProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      profileId,
+    )[modId];
   }
 
-  toggleModioExpand(id: number): void {
-    this.expandedModioId = this.expandedModioId === id ? null : id;
+  toggleOnlineExpand(key: string): void {
+    this.expandedOnlineKey = this.expandedOnlineKey === key ? null : key;
   }
 
   setActiveTab(tab: ModsTab): void {
     this.activeTab = tab;
-    if (tab === 'online' && this.modioMods.length === 0 && !this.modioLoading) {
+    if (this.modioMods.length === 0 && !this.modioLoading) {
       void this.loadModioCatalog();
     }
+  }
+
+  private isInstalledModEntry(mod: ModEntry): boolean {
+    if (mod.installState) {
+      return mod.installState === 'installed';
+    }
+
+    return mod.sourceFolderPath.trim().length > 0;
+  }
+
+  private isSubscribedModEntry(mod: ModEntry): boolean {
+    return !this.isInstalledModEntry(mod);
+  }
+
+  private isSubscriptionTrackedMod(mod: ModEntry): boolean {
+    return Boolean(mod.approvedModId || mod.modioModId);
   }
 
   isOptionSelected(mod: ModEntry, option: ApprovedModOption): boolean {
@@ -397,12 +626,18 @@ export class ModsPageComponent {
     }
 
     const current = this.modByApprovedId(profileId, approved.id);
+    const latestCatalogItem = this.findOnlineItemByApprovedId(approved.id);
     const modEntry = importModFromFolder(extractedPath, {
       id: approved.id,
       name: approved.name,
       description: approved.description,
     });
     modEntry.approvedModId = approved.id;
+    modEntry.modioModId = latestCatalogItem?.modio?.id;
+    modEntry.modioProfileUrl = latestCatalogItem?.profileUrl || approved.modIoUrl;
+    modEntry.modioFileId = latestCatalogItem?.modio?.modfileId;
+    modEntry.modioVersion = latestCatalogItem?.modio?.modfileVersion;
+    modEntry.installState = 'installed';
     modEntry.selectedOptions = {
       ...approved.options.reduce<Record<string, boolean>>((acc, option) => {
         if (option.lockedChecked) acc[option.id] = true;
@@ -429,21 +664,51 @@ export class ModsPageComponent {
   }
 
   async updateMod(mod: ModEntry): Promise<void> {
-    if (!mod.approvedModId) return;
-    const approved = getApprovedMod(mod.approvedModId);
-    if (!approved) return;
-    await this.addApprovedMod(this.activeProfileId, approved);
+    if (!this.isUpdateAvailable(mod) || this.isStoredModBusy(mod)) {
+      return;
+    }
+
+    const item = this.catalogItemForMod(mod);
+    await this.runBusyItem(item.key, 'update', async () => {
+      if (mod.approvedModId) {
+        const approved = getApprovedMod(mod.approvedModId);
+        if (!approved) return;
+        await this.addApprovedMod(this.activeProfileId, approved);
+        return;
+      }
+
+      await this.installOnlineItem(item, `Updating ${item.name}...`);
+    });
+  }
+
+  removeInstalledMod(mod: ModEntry): void {
+    if (!this.activeProfileId) {
+      this.statusMessage = 'Select an active profile on the Profiles page first.';
+      return;
+    }
+
+    this.settings = removeModFromProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.activeProfileId,
+      mod.id,
+    );
+    saveSettings(this.storage, this.settings);
+
+    const action = mod.modioModId || mod.approvedModId ? 'unsubscribed from' : 'removed from';
+    this.statusMessage = `'${mod.name}' ${action} profile.`;
   }
 
   async updateAll(): Promise<void> {
     if (!this.activeProfileId) return;
-    const modsWithApproved = this.installedMods.filter((m) => m.approvedModId);
-    if (modsWithApproved.length === 0) {
+    const updatableMods = this.installedMods.filter((m) => this.isUpdateAvailable(m));
+    if (updatableMods.length === 0) {
       this.statusMessage = 'No approved mods to update.';
       return;
     }
-    this.statusMessage = `Updating ${modsWithApproved.length} mod(s)...`;
-    for (const mod of modsWithApproved) {
+    this.statusMessage = `Updating ${updatableMods.length} mod(s)...`;
+    for (const mod of updatableMods) {
       await this.updateMod(mod);
     }
     this.statusMessage = 'All mods updated.';
@@ -533,17 +798,59 @@ export class ModsPageComponent {
     }
   }
 
-  isModioSubscribed(item: ModioCatalogItem): boolean {
-    return Boolean(this.modByModioId(this.activeProfileId, item.id));
+  isModioSubscribed(item: OnlineCatalogItem): boolean {
+    return Boolean(this.subscriptionEntryForItem(item));
   }
 
-  async toggleModioSubscription(item: ModioCatalogItem): Promise<void> {
-    if (this.isModioSubscribed(item)) {
-      this.unsubscribeModioMod(item);
+  isCatalogItemInstalled(item: OnlineCatalogItem): boolean {
+    const existing = this.subscriptionEntryForItem(item);
+    return existing ? this.isInstalledModEntry(existing) : false;
+  }
+
+  isOnlineItemBusy(item: OnlineCatalogItem, action?: 'subscribe' | 'install' | 'update'): boolean {
+    if (this.busyItemKey !== item.key) {
+      return false;
+    }
+
+    return action ? this.busyItemAction === action : true;
+  }
+
+  isStoredModBusy(mod: ModEntry, action?: 'install' | 'update'): boolean {
+    const item = this.catalogItemForMod(mod);
+    return this.isOnlineItemBusy(item, action);
+  }
+
+  approvedEntryForItem(item: OnlineCatalogItem): ModEntry | undefined {
+    if (!item.approved) {
+      return undefined;
+    }
+
+    return this.modByApprovedId(this.activeProfileId, item.approved.id);
+  }
+
+  async toggleModioSubscription(item: OnlineCatalogItem): Promise<void> {
+    if (this.isOnlineItemBusy(item)) {
       return;
     }
 
-    await this.subscribeModioMod(item);
+    if (this.isModioSubscribed(item)) {
+      this.unsubscribeOnlineItem(item);
+      return;
+    }
+
+    await this.runBusyItem(item.key, 'subscribe', async () => {
+      await this.subscribeOnlineItem(item);
+    });
+  }
+
+  async installSubscribedItem(item: OnlineCatalogItem): Promise<void> {
+    if (this.isOnlineItemBusy(item)) {
+      return;
+    }
+
+    await this.runBusyItem(item.key, 'install', async () => {
+      await this.installOnlineItem(item, `Installing ${item.name}...`);
+    });
   }
 
   private modByModioId(profileId: string, modioModId: number): ModEntry | undefined {
@@ -556,10 +863,171 @@ export class ModsPageComponent {
         profileId,
       ),
     );
-    return mods.find((m) => m.modioModId === modioModId);
+    const matches = mods.filter((m) => m.modioModId === modioModId);
+    return matches.find((m) => this.isInstalledModEntry(m)) ?? matches[0];
   }
 
-  private async subscribeModioMod(item: ModioCatalogItem): Promise<void> {
+  private async subscribeOnlineItem(item: OnlineCatalogItem): Promise<void> {
+    if (!this.activeProfileId) {
+      this.statusMessage = 'Select an active profile on the Profiles page first.';
+      return;
+    }
+
+    const existing = this.subscriptionEntryForItem(item);
+    const approved = item.approved;
+    const modId = approved?.id ?? `modio-${item.modio?.id ?? item.key}`;
+    const selectedOptions = approved
+      ? {
+          ...approved.options.reduce<Record<string, boolean>>((acc, option) => {
+            if (option.lockedChecked) acc[option.id] = true;
+            return acc;
+          }, {}),
+          ...(existing?.selectedOptions ?? {}),
+        }
+      : existing?.selectedOptions;
+
+    const modEntry: ModEntry = {
+      id: modId,
+      name: item.name,
+      sourceFolderPath: existing?.sourceFolderPath ?? '',
+      importedAt: existing?.importedAt ?? new Date().toISOString(),
+      installState: this.isInstalledModEntry(existing ?? ({ sourceFolderPath: '' } as ModEntry))
+        ? 'installed'
+        : 'subscribed',
+      description: item.summary,
+      approvedModId: approved?.id,
+      modioModId: item.modio?.id ?? existing?.modioModId,
+      modioProfileUrl: item.profileUrl,
+      modioFileId: item.modio?.modfileId ?? existing?.modioFileId,
+      modioVersion: item.modio?.modfileVersion ?? existing?.modioVersion,
+      selectedOptions,
+    };
+
+    this.settings = addModToProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.activeProfileId,
+      modEntry,
+    );
+    saveSettings(this.storage, this.settings);
+
+    if (approved) {
+      await saveProfileSelection(this.activeProfileId, approved.id, selectedOptions ?? {});
+      if (!this.profileSelectionsByProfileId[this.activeProfileId]) {
+        this.profileSelectionsByProfileId[this.activeProfileId] = {};
+      }
+      this.profileSelectionsByProfileId[this.activeProfileId][approved.id] = selectedOptions ?? {};
+    }
+
+    this.statusMessage = `'${item.name}' subscribed. Install it from the Subscribed tab.`;
+  }
+
+  private unsubscribeOnlineItem(item: OnlineCatalogItem): void {
+    if (!this.activeProfileId) {
+      this.statusMessage = 'Select an active profile on the Profiles page first.';
+      return;
+    }
+
+    const existing = item.approved
+      ? this.modByApprovedId(this.activeProfileId, item.approved.id)
+      : item.modio
+        ? this.modByModioId(this.activeProfileId, item.modio.id)
+        : undefined;
+
+    if (!existing) {
+      this.statusMessage = `'${item.name}' is not currently subscribed in this profile.`;
+      return;
+    }
+
+    this.settings = removeModFromProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.activeProfileId,
+      existing.id,
+    );
+    saveSettings(this.storage, this.settings);
+    this.statusMessage = `'${item.name}' removed from profile.`;
+  }
+
+  isUpdateAvailable(mod: ModEntry): boolean {
+    if (!this.isInstalledModEntry(mod)) {
+      return false;
+    }
+
+    const latestFileId = this.catalogItemForMod(mod).modio?.modfileId ?? 0;
+    if (!latestFileId) {
+      return false;
+    }
+
+    if (!mod.modioFileId) {
+      return true;
+    }
+
+    return mod.modioFileId !== latestFileId;
+  }
+
+  private subscriptionEntryForItem(item: OnlineCatalogItem): ModEntry | undefined {
+    if (item.approved) {
+      return this.modByApprovedId(this.activeProfileId, item.approved.id);
+    }
+
+    if (item.modio) {
+      return this.modByModioId(this.activeProfileId, item.modio.id);
+    }
+
+    return undefined;
+  }
+
+  private findOnlineItemByApprovedId(approvedId: string): OnlineCatalogItem | undefined {
+    return this.onlineCatalogItems.find((item) => item.approved?.id === approvedId);
+  }
+
+  private catalogItemForMod(mod: ModEntry): OnlineCatalogItem {
+    const matched = mod.approvedModId
+      ? this.findOnlineItemByApprovedId(mod.approvedModId)
+      : mod.modioModId
+        ? this.onlineCatalogItems.find((item) => item.modio?.id === mod.modioModId)
+        : undefined;
+
+    if (matched) {
+      return matched;
+    }
+
+    const approved = mod.approvedModId ? getApprovedMod(mod.approvedModId) : undefined;
+    return {
+      key: `stored:${mod.id}`,
+      name: mod.name,
+      summary: mod.description ?? approved?.description ?? '',
+      profileUrl: mod.modioProfileUrl ?? approved?.modIoUrl ?? '',
+      thumbnailUrl: '',
+      downloadUrl: approved?.downloadUrl ?? '',
+      tags: [],
+      dateUpdated: 0,
+      downloadsTotal: 0,
+      subscribersTotal: 0,
+      modio: mod.modioModId
+        ? {
+            id: mod.modioModId,
+            name: mod.name,
+            summary: mod.description ?? '',
+            profileUrl: mod.modioProfileUrl ?? '',
+            thumbnailUrl: '',
+            downloadUrl: approved?.downloadUrl ?? '',
+            modfileId: mod.modioFileId ?? 0,
+            modfileVersion: mod.modioVersion ?? '',
+            tags: [],
+            dateUpdated: 0,
+            downloadsTotal: 0,
+            subscribersTotal: 0,
+          }
+        : undefined,
+      approved,
+    };
+  }
+
+  private async installOnlineItem(item: OnlineCatalogItem, actionLabel: string): Promise<void> {
     if (!this.activeProfileId) {
       this.statusMessage = 'Select an active profile on the Profiles page first.';
       return;
@@ -579,8 +1047,20 @@ export class ModsPageComponent {
       return;
     }
 
-    this.statusMessage = `Subscribing to ${item.name}...`;
-    const destination = toDownloadedModPath(installPath, `modio-${item.id}`);
+    this.statusMessage = actionLabel;
+
+    if (item.approved) {
+      await this.addApprovedMod(this.activeProfileId, item.approved);
+      return;
+    }
+
+    if (!item.modio) {
+      this.statusMessage = `No downloadable file available for '${item.name}'.`;
+      return;
+    }
+
+    const existing = this.subscriptionEntryForItem(item);
+    const destination = toDownloadedModPath(installPath, `modio-${item.modio.id}`);
     const extractedPath = await downloadAndExtractZip(item.downloadUrl, destination);
     if (!extractedPath) {
       this.statusMessage = `Failed to download/extract '${item.name}'.`;
@@ -588,12 +1068,16 @@ export class ModsPageComponent {
     }
 
     const modEntry = importModFromFolder(extractedPath, {
-      id: `modio-${item.id}`,
+      id: existing?.id ?? `modio-${item.modio.id}`,
       name: item.name,
       description: item.summary,
     });
-    modEntry.modioModId = item.id;
+    modEntry.installState = 'installed';
+    modEntry.modioModId = item.modio.id;
     modEntry.modioProfileUrl = item.profileUrl;
+    modEntry.modioFileId = item.modio.modfileId;
+    modEntry.modioVersion = item.modio.modfileVersion;
+    modEntry.selectedOptions = existing?.selectedOptions;
 
     this.settings = addModToProfile(
       this.settings,
@@ -603,30 +1087,22 @@ export class ModsPageComponent {
       modEntry,
     );
     saveSettings(this.storage, this.settings);
-    this.statusMessage = `'${item.name}' subscribed and added to profile.`;
+    this.statusMessage = `'${item.name}' installed.`;
   }
 
-  private unsubscribeModioMod(item: ModioCatalogItem): void {
-    if (!this.activeProfileId) {
-      this.statusMessage = 'Select an active profile on the Profiles page first.';
-      return;
+  private async runBusyItem(
+    key: string,
+    action: 'subscribe' | 'install' | 'update',
+    work: () => Promise<void>,
+  ): Promise<void> {
+    this.busyItemKey = key;
+    this.busyItemAction = action;
+    try {
+      await work();
+    } finally {
+      this.busyItemKey = null;
+      this.busyItemAction = null;
     }
-
-    const existing = this.modByModioId(this.activeProfileId, item.id);
-    if (!existing) {
-      this.statusMessage = `'${item.name}' is not currently subscribed in this profile.`;
-      return;
-    }
-
-    this.settings = removeModFromProfile(
-      this.settings,
-      this.settings.selectedStoreId,
-      this.settings.selectedGameId,
-      this.activeProfileId,
-      existing.id,
-    );
-    saveSettings(this.storage, this.settings);
-    this.statusMessage = `'${item.name}' removed from profile.`;
   }
 
   private refreshProfiles(): void {

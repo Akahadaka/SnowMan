@@ -5,6 +5,8 @@ export interface ModioCatalogItem {
   profileUrl: string;
   thumbnailUrl: string;
   downloadUrl: string;
+  modfileId: number;
+  modfileVersion: string;
   tags: string[];
   dateUpdated: number;
   downloadsTotal: number;
@@ -59,6 +61,8 @@ interface ModioDownloadLike {
 }
 
 interface ModioModfileLike {
+  id?: unknown;
+  version?: unknown;
   download?: unknown;
 }
 
@@ -117,6 +121,8 @@ function normalizeItem(raw: ModioRowLike): ModioCatalogItem {
     profileUrl: asString(raw.profile_url),
     thumbnailUrl: asString(logo?.thumb_320x180) || asString(logo?.thumb_640x360),
     downloadUrl: asString(download?.binary_url),
+    modfileId: asNumber(modfile?.id),
+    modfileVersion: asString(modfile?.version),
     tags: tagsRaw.map((tag) => asString(tag.name)).filter((tag) => tag.length > 0),
     dateUpdated: asNumber(raw.date_updated),
     downloadsTotal: asNumber(stats.downloads_total),

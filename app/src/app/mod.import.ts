@@ -23,6 +23,7 @@ export function importModFromFolder(folderPath: string, manifest?: ModManifest):
     name: manifest?.name ?? folderName,
     sourceFolderPath: folderPath,
     importedAt: new Date().toISOString(),
+    installState: 'installed',
     ...(manifest?.description !== undefined ? { description: manifest.description } : {}),
   };
 }

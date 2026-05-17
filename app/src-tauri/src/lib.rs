@@ -605,8 +605,7 @@ fn extract_zip_to_path(bytes: &[u8], destination: &Path) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-fn download_and_extract_zip(url: String, destination_path: String) -> Result<String, String> {
+fn download_and_extract_zip_blocking(url: String, destination_path: String) -> Result<String, String> {
     if url.trim().is_empty() {
         return Err("Download URL is empty.".to_string());
     }
@@ -627,6 +626,15 @@ fn download_and_extract_zip(url: String, destination_path: String) -> Result<Str
 
     extract_zip_to_path(&bytes, &destination)?;
     Ok(destination.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+async fn download_and_extract_zip(url: String, destination_path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        download_and_extract_zip_blocking(url, destination_path)
+    })
+    .await
+    .map_err(|e| format!("Download worker failed: {e}"))?
 }
 
 #[tauri::command]
@@ -698,7 +706,7 @@ mod tests {
 
     #[test]
     fn download_and_extract_zip_rejects_empty_inputs() {
-        let result = download_and_extract_zip("".to_string(), "".to_string());
+        let result = download_and_extract_zip_blocking("".to_string(), "".to_string());
 
         assert!(result.is_err());
     }
