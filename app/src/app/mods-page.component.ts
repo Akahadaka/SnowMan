@@ -1091,23 +1091,21 @@ export class ModsPageComponent implements OnInit {
     this.modioLoading = true;
     this.modioError = '';
     const cred = resolveModioCredential(this.settings);
-    const modioApiKey = cred.value;
-    const authMode = cred.mode === 'bearer' ? 'bearer' : 'apikey';
+    const accessToken = cred.value;
 
     try {
       this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
 
       const shouldRefreshFromApi =
-        Boolean(modioApiKey.trim()) &&
+        Boolean(accessToken.trim()) &&
         (!this.settings.hasHydratedModioCache || this.modioMods.length === 0) &&
         !this.searchQuery.trim();
       if (shouldRefreshFromApi) {
         const allItems = await fetchAllModioCatalog({
           gameId: MODIO_GAME_ID,
-          apiKey: modioApiKey,
+          accessToken,
           pageSize: 100,
           maxPages: 200,
-          authMode,
         });
         await syncModioCatalog(allItems);
         this.settings = mergeSettings({ hasHydratedModioCache: true }, this.settings);
@@ -1115,7 +1113,7 @@ export class ModsPageComponent implements OnInit {
         this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
       }
 
-      if (!modioApiKey.trim() && this.modioMods.length === 0) {
+      if (!accessToken.trim() && this.modioMods.length === 0) {
         this.modioError = 'Sign in to mod.io in Settings to browse mods.';
       }
     } catch (error) {

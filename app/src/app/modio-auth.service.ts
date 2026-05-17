@@ -20,11 +20,10 @@ function emailExchangeUrl(gameId: number): string {
 
 export async function requestEmailCode(
   email: string,
-  apiKey: string,
   gameId: number,
   fetchFn: FetchLike = (input, init) => fetch(input, init),
 ): Promise<void> {
-  const body = new URLSearchParams({ email, api_key: apiKey });
+  const body = new URLSearchParams({ email });
 
   const response = await fetchFn(emailRequestUrl(gameId), {
     method: 'POST',
@@ -40,11 +39,10 @@ export async function requestEmailCode(
 export async function exchangeEmailCode(
   email: string,
   securityCode: string,
-  apiKey: string,
   gameId: number,
   fetchFn: FetchLike = (input, init) => fetch(input, init),
 ): Promise<string> {
-  const body = new URLSearchParams({ email, security_code: securityCode, api_key: apiKey });
+  const body = new URLSearchParams({ email, security_code: securityCode });
 
   const response = await fetchFn(emailExchangeUrl(gameId), {
     method: 'POST',

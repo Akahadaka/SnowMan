@@ -7,41 +7,27 @@ import {
 } from './modio-catalog.service';
 
 describe('modio catalog service', () => {
-  it('builds browse URL with game-specific host and key', () => {
+  it('builds browse URL with game-specific host and pagination params', () => {
     const url = buildModioCatalogUrl({
       gameId: 306,
-      apiKey: 'abc123',
       limit: 50,
       offset: 100,
     });
 
     expect(url).toContain('https://g-306.modapi.io/v1/games/306/mods');
-    expect(url).toContain('api_key=abc123');
     expect(url).toContain('_limit=50');
     expect(url).toContain('_offset=100');
     expect(url).toContain('_sort=-date_updated');
-  });
-
-  it('builds bearer URL without api_key query param', () => {
-    const url = buildModioCatalogUrl({
-      gameId: 306,
-      apiKey: 'tok_abc',
-      limit: 50,
-      offset: 0,
-      authMode: 'bearer',
-    });
-
-    expect(url).toContain('https://g-306.modapi.io/v1/games/306/mods');
     expect(url).not.toContain('api_key');
   });
 
-  it('sends Authorization header when authMode is bearer', async () => {
+  it('sends Authorization header when fetching catalog', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ data: [] }),
     });
 
-    await fetchModioCatalog({ gameId: 306, apiKey: 'tok_abc', query: '' }, fetchMock, 'bearer');
+    await fetchModioCatalog({ gameId: 306, accessToken: 'tok_abc', query: '' }, fetchMock);
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect((init?.headers as Record<string, string>)?.['Authorization']).toBe('Bearer tok_abc');
@@ -83,7 +69,7 @@ describe('modio catalog service', () => {
     const result = await fetchModioCatalog(
       {
         gameId: 306,
-        apiKey: 'abc123',
+        accessToken: 'tok_abc',
         query: 'manual',
       },
       fetchMock,
@@ -100,13 +86,13 @@ describe('modio catalog service', () => {
     expect(result[0].subscribersTotal).toBe(45);
   });
 
-  it('returns empty list when API key is missing', async () => {
+  it('returns empty list when access token is missing', async () => {
     const fetchMock = vi.fn();
 
     const result = await fetchModioCatalog(
       {
         gameId: 306,
-        apiKey: '',
+        accessToken: '',
         query: '',
       },
       fetchMock,
@@ -126,7 +112,7 @@ describe('modio catalog service', () => {
       fetchModioCatalog(
         {
           gameId: 306,
-          apiKey: 'bad-key',
+          accessToken: 'bad-token',
           query: '',
         },
         fetchMock,
@@ -143,7 +129,7 @@ describe('modio catalog service', () => {
     const result: ModioCatalogItem[] = await fetchModioCatalog(
       {
         gameId: 306,
-        apiKey: 'abc123',
+        accessToken: 'tok_abc',
         query: '',
       },
       fetchMock,
@@ -186,7 +172,7 @@ describe('modio catalog service', () => {
     const items = await fetchAllModioCatalog(
       {
         gameId: 306,
-        apiKey: 'abc123',
+        accessToken: 'tok_abc',
         pageSize: 2,
       },
       fetchMock,

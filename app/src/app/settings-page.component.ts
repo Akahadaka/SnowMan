@@ -5,7 +5,6 @@ import {
   getInstallPathForStore,
   loadSettings,
   mergeSettings,
-  resolveModioCredential,
   saveSettings,
   type AppSettings,
   type StorageLike,
@@ -248,9 +247,7 @@ export class SettingsPageComponent {
     this.modioError = '';
     this.modioSending = true;
     try {
-      const cred = resolveModioCredential(this.settings);
-      const apiKey = cred.mode === 'apikey' ? cred.value : '';
-      await requestEmailCode(this.modioEmail.trim(), apiKey, MODIO_GAME_ID);
+      await requestEmailCode(this.modioEmail.trim(), MODIO_GAME_ID);
       this.modioCodeSent = true;
     } catch (e) {
       this.modioError = e instanceof Error ? e.message : 'Failed to send code.';
@@ -263,12 +260,9 @@ export class SettingsPageComponent {
     this.modioError = '';
     this.modioVerifying = true;
     try {
-      const cred = resolveModioCredential(this.settings);
-      const apiKey = cred.mode === 'apikey' ? cred.value : '';
       const token = await exchangeEmailCode(
         this.modioEmail.trim(),
         this.modioCode.trim(),
-        apiKey,
         MODIO_GAME_ID,
       );
       this.settings = {

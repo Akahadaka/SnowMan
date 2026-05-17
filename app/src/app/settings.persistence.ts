@@ -63,24 +63,15 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-type GlobalWithModioKey = typeof globalThis & { MODIO_API_KEY?: string };
-
 /**
- * Returns the best available mod.io credential:
- * 1. Persisted OAuth access token (bearer)
- * 2. Build-time API key from globalThis.MODIO_API_KEY
- * 3. Empty string (no credential)
+ * Returns the persisted mod.io OAuth access token, if present.
  */
 export function resolveModioCredential(settings: AppSettings): {
   value: string;
-  mode: 'bearer' | 'apikey' | 'none';
+  mode: 'bearer' | 'none';
 } {
   if (settings.modioAccessToken.trim()) {
     return { value: settings.modioAccessToken.trim(), mode: 'bearer' };
-  }
-  const buildKey = ((globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '').trim();
-  if (buildKey) {
-    return { value: buildKey, mode: 'apikey' };
   }
   return { value: '', mode: 'none' };
 }
