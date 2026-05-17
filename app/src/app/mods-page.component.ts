@@ -25,7 +25,10 @@ type ModsTab = 'installed' | 'online';
 type GlobalWithModioKey = typeof globalThis & { MODIO_API_KEY?: string };
 
 const MODIO_GAME_ID = 306;
-const MODIO_API_KEY = (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
+
+function getModioApiKey(): string {
+  return (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
+}
 
 @Component({
   selector: 'app-mods-page',
@@ -435,15 +438,16 @@ export class ModsPageComponent {
   async loadModioCatalog(): Promise<void> {
     this.modioLoading = true;
     this.modioError = '';
+    const modioApiKey = getModioApiKey();
 
     try {
       this.modioMods = await fetchModioCatalog({
         gameId: MODIO_GAME_ID,
-        apiKey: MODIO_API_KEY,
+        apiKey: modioApiKey,
         query: this.searchQuery,
       });
 
-      if (!MODIO_API_KEY.trim()) {
+      if (!modioApiKey.trim()) {
         this.modioError = 'mod.io API key is not configured for this build.';
       }
     } catch (error) {

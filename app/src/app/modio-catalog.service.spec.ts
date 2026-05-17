@@ -31,6 +31,8 @@ describe('modio catalog service', () => {
             name: 'Real Life Mod',
             summary: 'Manual install gameplay overhaul',
             profile_url: 'https://mod.io/g/snowrunner/m/real-life-mod',
+            logo: { thumb_320x180: 'https://cdn.mod.io/thumb-rlm.jpg' },
+            modfile: { download: { binary_url: 'https://cdn.mod.io/real-life-mod.zip' } },
             date_updated: 1700000000,
             tags: [{ name: 'Manual' }, { name: 'Physics' }],
             stats: { downloads_total: 123, subscribers_total: 45 },
@@ -59,6 +61,8 @@ describe('modio catalog service', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('Real Life Mod');
+    expect(result[0].thumbnailUrl).toBe('https://cdn.mod.io/thumb-rlm.jpg');
+    expect(result[0].downloadUrl).toBe('https://cdn.mod.io/real-life-mod.zip');
     expect(result[0].tags).toContain('Manual');
     expect(result[0].downloadsTotal).toBe(123);
     expect(result[0].subscribersTotal).toBe(45);
@@ -118,6 +122,8 @@ describe('modio catalog service', () => {
       name: 'X',
       summary: '',
       profileUrl: '',
+      thumbnailUrl: '',
+      downloadUrl: '',
       tags: [],
       downloadsTotal: 0,
       subscribersTotal: 0,

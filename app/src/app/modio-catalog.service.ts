@@ -3,6 +3,8 @@ export interface ModioCatalogItem {
   name: string;
   summary: string;
   profileUrl: string;
+  thumbnailUrl: string;
+  downloadUrl: string;
   tags: string[];
   dateUpdated: number;
   downloadsTotal: number;
@@ -39,9 +41,25 @@ interface ModioRowLike {
   name?: unknown;
   summary?: unknown;
   profile_url?: unknown;
+  logo?: unknown;
+  modfile?: unknown;
   date_updated?: unknown;
   tags?: unknown;
   stats?: unknown;
+}
+
+interface ModioLogoLike {
+  thumb_320x180?: unknown;
+  thumb_640x360?: unknown;
+  original?: unknown;
+}
+
+interface ModioDownloadLike {
+  binary_url?: unknown;
+}
+
+interface ModioModfileLike {
+  download?: unknown;
 }
 
 interface ModioListPayload {
@@ -81,12 +99,24 @@ function normalizeItem(raw: ModioRowLike): ModioCatalogItem {
   const stats = (
     typeof raw.stats === 'object' && raw.stats !== null ? (raw.stats as ModioStatsLike) : {}
   ) as ModioStatsLike;
+  const logo =
+    typeof raw.logo === 'object' && raw.logo !== null ? (raw.logo as ModioLogoLike) : undefined;
+  const modfile =
+    typeof raw.modfile === 'object' && raw.modfile !== null
+      ? (raw.modfile as ModioModfileLike)
+      : undefined;
+  const download =
+    typeof modfile?.download === 'object' && modfile.download !== null
+      ? (modfile.download as ModioDownloadLike)
+      : undefined;
 
   return {
     id: asNumber(raw.id),
     name: asString(raw.name),
     summary: asString(raw.summary),
     profileUrl: asString(raw.profile_url),
+    thumbnailUrl: asString(logo?.thumb_320x180) || asString(logo?.thumb_640x360),
+    downloadUrl: asString(download?.binary_url),
     tags: tagsRaw.map((tag) => asString(tag.name)).filter((tag) => tag.length > 0),
     dateUpdated: asNumber(raw.date_updated),
     downloadsTotal: asNumber(stats.downloads_total),

@@ -90,6 +90,42 @@ export function addModToProfile(
   );
 }
 
+export function removeModFromProfile(
+  settings: AppSettings,
+  storeId: StoreId,
+  gameId: GameId,
+  profileId: string,
+  modId: string,
+): AppSettings {
+  const profiles = settings.stores[storeId]?.games[gameId]?.profiles ?? {};
+  const existingProfile = profiles[profileId];
+  if (!existingProfile) {
+    return settings;
+  }
+
+  const existingMods: ModsMap = (existingProfile as { mods?: ModsMap }).mods ?? {};
+  if (!existingMods[modId]) {
+    return settings;
+  }
+
+  const { [modId]: _removed, ...restMods } = existingMods;
+  const updatedProfile = { ...existingProfile, mods: restMods };
+  const updatedProfiles = { ...profiles, [profileId]: updatedProfile };
+
+  return mergeSettings(
+    {
+      stores: {
+        [storeId]: {
+          games: {
+            [gameId]: { profiles: updatedProfiles },
+          },
+        },
+      },
+    },
+    settings,
+  );
+}
+
 export function getModsForProfile(
   settings: AppSettings,
   storeId: StoreId,

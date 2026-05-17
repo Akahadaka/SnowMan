@@ -29,6 +29,11 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "modio-config.local.js",
+                "input": "src",
+                "output": "."
               }
             ],
             "styles": ["src/styles.css"]
