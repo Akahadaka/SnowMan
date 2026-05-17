@@ -36,6 +36,15 @@ describe('ModsPageComponent', () => {
     expect(component.expandedModId).toBeNull();
   });
 
+  it('toggleModioExpand expands and collapses by mod id', () => {
+    const component = new ModsPageComponent();
+    component.toggleModioExpand(123);
+    expect(component.expandedModioId).toBe(123);
+
+    component.toggleModioExpand(123);
+    expect(component.expandedModioId).toBeNull();
+  });
+
   it('updateAll resolves without error when no mods installed', async () => {
     const component = new ModsPageComponent();
     await expect(component.updateAll()).resolves.toBeUndefined();

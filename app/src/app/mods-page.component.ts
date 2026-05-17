@@ -8,7 +8,12 @@ import {
   searchCatalog,
   syncCatalog,
 } from './mod-catalog.db';
-import { addModToProfile, getModsForProfile, importModFromFolder } from './mod.import';
+import {
+  addModToProfile,
+  getModsForProfile,
+  importModFromFolder,
+  removeModFromProfile,
+} from './mod.import';
 import type { ModEntry, ApprovedModDefinition, ApprovedModOption } from './mod.types';
 import { downloadAndExtractZip } from './mods.runtime.bridge';
 import { getProfiles } from './profiles.persistence';
@@ -128,31 +133,85 @@ function getModioApiKey(): string {
             } @else {
               <div class="grid gap-2">
                 @for (item of modioMods; track item.id) {
-                  <div class="border border-base-300 rounded-box p-3">
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="min-w-0">
-                        <p class="font-semibold m-0">{{ item.name }}</p>
-                        <p class="text-xs text-base-content/60 m-0 mt-0.5 line-clamp-2">
-                          {{ item.summary }}
-                        </p>
+                  <div
+                    class="border border-base-300 rounded-box p-3 cursor-pointer hover:bg-primary/5"
+                    (click)="toggleModioExpand(item.id)"
+                  >
+                    <div class="flex items-start gap-3">
+                      <div
+                        class="w-28 h-16 shrink-0 rounded-md overflow-hidden border border-base-300 bg-base-200"
+                      >
+                        @if (item.thumbnailUrl) {
+                          <img
+                            [src]="item.thumbnailUrl"
+                            [alt]="item.name"
+                            class="w-full h-full object-cover"
+                          />
+                        } @else {
+                          <div
+                            class="w-full h-full flex items-center justify-center text-[11px] text-base-content/50"
+                          >
+                            No image
+                          </div>
+                        }
+                      </div>
+
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="min-w-0">
+                            <p class="font-semibold m-0">{{ item.name }}</p>
+                            <p class="text-xs text-base-content/60 m-0 mt-0.5 line-clamp-2">
+                              {{ item.summary || 'No summary provided.' }}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            class="btn btn-xs"
+                            [class.btn-primary]="!isModioSubscribed(item)"
+                            [class.btn-outline]="isModioSubscribed(item)"
+                            (click)="$event.stopPropagation(); toggleModioSubscription(item)"
+                          >
+                            {{ isModioSubscribed(item) ? 'Unsubscribe' : 'Subscribe' }}
+                          </button>
+                        </div>
+
                         @if (item.tags.length > 0) {
                           <p class="text-xs text-base-content/50 m-0 mt-1">
                             {{ item.tags.slice(0, 4).join(' • ') }}
                           </p>
                         }
+
+                        <p class="text-[11px] text-base-content/40 m-0 mt-1">
+                          Downloads: {{ item.downloadsTotal }} • Subscribers:
+                          {{ item.subscribersTotal }}
+                        </p>
+
+                        <p class="text-[11px] text-base-content/40 m-0 mt-1">
+                          {{
+                            expandedModioId === item.id ? 'Click to collapse' : 'Click for details'
+                          }}
+                        </p>
                       </div>
-                      <button
-                        type="button"
-                        class="btn btn-outline btn-xs"
-                        (click)="openModProfile(item.profileUrl)"
-                      >
-                        Open
-                      </button>
                     </div>
-                    <p class="text-[11px] text-base-content/40 m-0 mt-1">
-                      Downloads: {{ item.downloadsTotal }} • Subscribers:
-                      {{ item.subscribersTotal }}
-                    </p>
+
+                    @if (expandedModioId === item.id) {
+                      <div
+                        class="mt-3 pt-3 border-t border-base-300/70 text-xs text-base-content/70"
+                      >
+                        <p class="m-0 mb-2">
+                          {{ item.summary || 'No additional description available.' }}
+                        </p>
+                        <p class="m-0">Updated (epoch): {{ item.dateUpdated }}</p>
+                        <p class="m-0 mt-1 break-all">Profile: {{ item.profileUrl || 'N/A' }}</p>
+                        @if (item.downloadUrl) {
+                          <p class="m-0 mt-1 break-all">Download: {{ item.downloadUrl }}</p>
+                        } @else {
+                          <p class="m-0 mt-1 text-warning">
+                            No downloadable file currently available.
+                          </p>
+                        }
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -231,6 +290,7 @@ function getModioApiKey(): string {
 export class ModsPageComponent {
   activeTab: ModsTab = 'installed';
   expandedModId: string | null = null;
+  expandedModioId: number | null = null;
   statusMessage = '';
   searchQuery = '';
   modioMods: ModioCatalogItem[] = [];
@@ -289,6 +349,10 @@ export class ModsPageComponent {
 
   toggleExpand(id: string): void {
     this.expandedModId = this.expandedModId === id ? null : id;
+  }
+
+  toggleModioExpand(id: number): void {
+    this.expandedModioId = this.expandedModioId === id ? null : id;
   }
 
   setActiveTab(tab: ModsTab): void {
@@ -467,6 +531,102 @@ export class ModsPageComponent {
     if (typeof window !== 'undefined') {
       window.open(profileUrl, '_blank', 'noopener,noreferrer');
     }
+  }
+
+  isModioSubscribed(item: ModioCatalogItem): boolean {
+    return Boolean(this.modByModioId(this.activeProfileId, item.id));
+  }
+
+  async toggleModioSubscription(item: ModioCatalogItem): Promise<void> {
+    if (this.isModioSubscribed(item)) {
+      this.unsubscribeModioMod(item);
+      return;
+    }
+
+    await this.subscribeModioMod(item);
+  }
+
+  private modByModioId(profileId: string, modioModId: number): ModEntry | undefined {
+    if (!profileId) return undefined;
+    const mods = Object.values(
+      getModsForProfile(
+        this.settings,
+        this.settings.selectedStoreId,
+        this.settings.selectedGameId,
+        profileId,
+      ),
+    );
+    return mods.find((m) => m.modioModId === modioModId);
+  }
+
+  private async subscribeModioMod(item: ModioCatalogItem): Promise<void> {
+    if (!this.activeProfileId) {
+      this.statusMessage = 'Select an active profile on the Profiles page first.';
+      return;
+    }
+
+    if (!item.downloadUrl.trim()) {
+      this.statusMessage = `No downloadable file available for '${item.name}'.`;
+      return;
+    }
+
+    const installPath =
+      this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
+        ?.installPath ?? '';
+
+    if (!installPath.trim()) {
+      this.statusMessage = 'Set install path in Settings before adding mods.';
+      return;
+    }
+
+    this.statusMessage = `Subscribing to ${item.name}...`;
+    const destination = toDownloadedModPath(installPath, `modio-${item.id}`);
+    const extractedPath = await downloadAndExtractZip(item.downloadUrl, destination);
+    if (!extractedPath) {
+      this.statusMessage = `Failed to download/extract '${item.name}'.`;
+      return;
+    }
+
+    const modEntry = importModFromFolder(extractedPath, {
+      id: `modio-${item.id}`,
+      name: item.name,
+      description: item.summary,
+    });
+    modEntry.modioModId = item.id;
+    modEntry.modioProfileUrl = item.profileUrl;
+
+    this.settings = addModToProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.activeProfileId,
+      modEntry,
+    );
+    saveSettings(this.storage, this.settings);
+    this.statusMessage = `'${item.name}' subscribed and added to profile.`;
+  }
+
+  private unsubscribeModioMod(item: ModioCatalogItem): void {
+    if (!this.activeProfileId) {
+      this.statusMessage = 'Select an active profile on the Profiles page first.';
+      return;
+    }
+
+    const existing = this.modByModioId(this.activeProfileId, item.id);
+    if (!existing) {
+      this.statusMessage = `'${item.name}' is not currently subscribed in this profile.`;
+      return;
+    }
+
+    this.settings = removeModFromProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      this.activeProfileId,
+      existing.id,
+    );
+    saveSettings(this.storage, this.settings);
+    this.statusMessage = `'${item.name}' removed from profile.`;
   }
 
   private refreshProfiles(): void {

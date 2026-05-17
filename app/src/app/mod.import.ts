@@ -108,7 +108,8 @@ export function removeModFromProfile(
     return settings;
   }
 
-  const { [modId]: _removed, ...restMods } = existingMods;
+  const restMods: ModsMap = { ...existingMods };
+  delete restMods[modId];
   const updatedProfile = { ...existingProfile, mods: restMods };
   const updatedProfiles = { ...profiles, [profileId]: updatedProfile };
 

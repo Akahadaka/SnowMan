@@ -5,6 +5,8 @@ export interface ModEntry {
   importedAt: string;
   description?: string;
   approvedModId?: string;
+  modioModId?: number;
+  modioProfileUrl?: string;
   selectedOptions?: Record<string, boolean>;
 }
 
