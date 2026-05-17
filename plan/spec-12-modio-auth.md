@@ -2,25 +2,22 @@
 
 ## Goal
 
-Allow users to log in with their own mod.io account via OAuth so the app no longer
-depends on a build-time embedded API key. Once authenticated, the access token is used
-for all mod.io API calls instead of the static key.
+Allow users to log in with their own mod.io account via OAuth so mod.io access is
+token-based. Once authenticated, the access token is used for all mod.io API calls.
 
 ---
 
 ## Context
 
-The current implementation reads a mod.io API key from a `modio-config.local.js` file
-injected at build time (`globalThis.MODIO_API_KEY`). This works for development but is
-not suitable for a public release because it requires the key to be bundled or kept out
-of source control by each builder.
+The app now uses mod.io access tokens persisted in settings. Build-time API-key
+injection has been removed.
 
 mod.io supports OAuth 2.0 Device Flow (no redirect URI required — ideal for desktop apps):
 1. App requests a device code from mod.io.
 2. App shows the user a URL + code to visit in a browser.
 3. App polls mod.io until the user approves.
 4. mod.io returns an access token.
-5. All subsequent API calls use `Authorization: Bearer <token>` instead of `?api_key=`.
+5. All subsequent API calls use `Authorization: Bearer <token>`.
 
 Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 
@@ -31,8 +28,8 @@ Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 ### AC-01 mod.io auth service
 
 - Add `modio-auth.service.ts` with pure, injectable functions:
-  - `requestEmailCode(email, apiKey, fetchFn)` — POST to mod.io email auth endpoint.
-  - `exchangeEmailCode(email, code, apiKey, fetchFn)` — POST security code, return access token string.
+  - `requestEmailCode(email, fetchFn)` — POST to mod.io email auth endpoint.
+  - `exchangeEmailCode(email, code, fetchFn)` — POST security code, return access token string.
 - Both functions throw on non-2xx HTTP responses.
 - Service is fully unit-tested with injected fetch stubs.
 
@@ -52,26 +49,25 @@ Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 - Show inline error messages for bad email, bad code, or network failure.
 - Loading state on both buttons while async calls are in-flight.
 
-### AC-04 API key resolution priority
+### AC-04 Credential resolution
 
-- Extract a `resolveModioApiKey(settings)` helper that returns:
-  1. `settings.modioAccessToken` if non-empty (Bearer token path).
-  2. `globalThis.MODIO_API_KEY` fallback (build-time key).
-  3. Empty string if neither is set.
-- Replace the inline `getModioApiKey()` function in `mods-page.component.ts` with this helper.
-- `fetchModioCatalog` and `fetchAllModioCatalog` already accept `apiKey` — no changes needed there except callers use the resolved value.
+- Add `resolveModioCredential(settings)` helper that returns:
+  1. `settings.modioAccessToken` if non-empty.
+  2. Empty string if no token is stored.
+- Replace inline key lookup logic in `mods-page.component.ts` with this helper.
+- `fetchModioCatalog` and `fetchAllModioCatalog` callers pass the resolved access token.
 
 ### AC-05 Authenticated API calls
 
 - When making mod.io requests with a Bearer token, use `Authorization: Bearer <token>`
-  header instead of the `api_key` query parameter.
-- Update `buildModioCatalogUrl` and `fetchModioCatalog` to accept an optional `authMode: 'apikey' | 'bearer'` param.
-- Tests cover both auth modes.
+  header.
+- `buildModioCatalogUrl` must not include `api_key` query params.
+- Tests cover bearer-token requests and missing-token behavior.
 
 ### AC-06 Safety of existing flows
 
-- If `modioAccessToken` is empty and `MODIO_API_KEY` is also empty, the Online tab
-  shows a "Sign in to mod.io to browse mods" prompt instead of an error.
+- If `modioAccessToken` is empty, the Online tab shows a "Sign in to mod.io to browse
+  mods" prompt instead of crashing.
 - All existing tests remain green.
 
 ---
@@ -97,8 +93,8 @@ Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 
 - mod.io email auth endpoints:
   - Request code: `POST https://g-306.modapi.io/v1/oauth/emailrequest`
-    - body: `email=<email>&api_key=<key>`
+    - body: `email=<email>`
   - Exchange code: `POST https://g-306.modapi.io/v1/oauth/emailexchange`
-    - body: `security_code=<code>&api_key=<key>`
+    - body: `email=<email>&security_code=<code>`
     - returns `{ "access_token": "..." }`
 - The game-scoped base URL (`g-306.modapi.io`) is used for all calls.
