@@ -22,6 +22,7 @@ import { getProfiles } from './profiles.persistence';
 import type { Profile } from './profile.types';
 import {
   loadSettings,
+  mergeSettings,
   saveSettings,
   type AppSettings,
   type StorageLike,
@@ -564,7 +565,6 @@ export class ModsPageComponent implements OnInit {
   modioMods: ModioCatalogItem[] = [];
   modioLoading = false;
   modioError = '';
-  hasHydratedModioCache = false;
   profiles: Profile[] = [];
   approvedMods: ApprovedModDefinition[] = [...APPROVED_MODS];
   profileSelectionsByProfileId: Record<string, Record<string, Record<string, boolean>>> = {};
@@ -1077,7 +1077,8 @@ export class ModsPageComponent implements OnInit {
 
       const shouldRefreshFromApi =
         Boolean(modioApiKey.trim()) &&
-        (!this.hasHydratedModioCache || this.modioMods.length === 0 || !this.searchQuery.trim());
+        (!this.settings.hasHydratedModioCache || this.modioMods.length === 0) &&
+        !this.searchQuery.trim();
       if (shouldRefreshFromApi) {
         const allItems = await fetchAllModioCatalog({
           gameId: MODIO_GAME_ID,
@@ -1086,7 +1087,8 @@ export class ModsPageComponent implements OnInit {
           maxPages: 200,
         });
         await syncModioCatalog(allItems);
-        this.hasHydratedModioCache = true;
+        this.settings = mergeSettings({ hasHydratedModioCache: true }, this.settings);
+        saveSettings(this.storage, this.settings);
         this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
       }
 
