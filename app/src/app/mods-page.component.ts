@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { APPROVED_MODS, getApprovedMod } from './approved-mods.catalog';
 import { toDownloadedModPath } from './approved-mods.logic';
 import { fetchAllModioCatalog, type ModioCatalogItem } from './modio-catalog.service';
@@ -551,7 +551,7 @@ function normalizeCatalogUrl(url: string): string {
     </div>
   `,
 })
-export class ModsPageComponent {
+export class ModsPageComponent implements OnInit {
   @ViewChild('categoryDropdown')
   private categoryDropdownRef?: ElementRef<HTMLDetailsElement>;
 
@@ -580,6 +580,12 @@ export class ModsPageComponent {
     void this.initializeCatalog();
     if (getModioApiKey().trim()) {
       void this.loadModioCatalog();
+    }
+  }
+
+  ngOnInit(): void {
+    if (this.activeProfileId) {
+      this.activeTab = 'installed';
     }
   }
 
