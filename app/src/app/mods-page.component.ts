@@ -1,11 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { APPROVED_MODS, getApprovedMod } from './approved-mods.catalog';
 import { toDownloadedModPath } from './approved-mods.logic';
-import { fetchModioCatalog, type ModioCatalogItem } from './modio-catalog.service';
+import { fetchAllModioCatalog, type ModioCatalogItem } from './modio-catalog.service';
 import {
   loadProfileSelections,
   saveProfileSelection,
   searchCatalog,
+  searchModioCatalog,
+  syncModioCatalog,
   syncCatalog,
 } from './mod-catalog.db';
 import {
@@ -44,7 +46,15 @@ interface OnlineCatalogItem {
   approved?: ApprovedModDefinition;
 }
 
+interface CategoryFilterOption {
+  key: string;
+  label: string;
+  count: number;
+}
+
 const MODIO_GAME_ID = 306;
+const UNCATEGORIZED_KEY = '__uncategorized';
+const UNCATEGORIZED_LABEL = 'Uncategorized';
 
 function getModioApiKey(): string {
   return (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
@@ -89,6 +99,68 @@ function normalizeCatalogUrl(url: string): string {
           />
         </div>
 
+        <details #categoryDropdown class="dropdown dropdown-end">
+          <summary class="btn btn-outline btn-sm">
+            Categories
+            @if (selectedCategoryFilters.length > 0) {
+              <span class="badge badge-sm ml-1">{{ selectedCategoryFilters.length }}</span>
+            }
+          </summary>
+          <div class="dropdown-content z-20 mt-2 w-72 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg">
+            @if (availableCategoryFilters.length === 0) {
+              <p class="m-0 text-xs text-base-content/60">No categories on this tab yet.</p>
+            } @else {
+              <div class="max-h-60 overflow-y-auto pr-1">
+                @for (option of availableCategoryFilters; track option.key) {
+                  <label class="flex items-center justify-between gap-2 py-1 text-sm cursor-pointer">
+                    <span class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        class="checkbox checkbox-xs"
+                        [checked]="isCategoryFilterSelected(option.key)"
+                        (change)="toggleCategoryFilter(option.key, $any($event.target).checked)"
+                      />
+                      <span>{{ option.label }}</span>
+                    </span>
+                    <span class="text-xs text-base-content/50">{{ option.count }}</span>
+                  </label>
+                }
+              </div>
+            }
+
+            <div class="mt-3 border-t border-base-300 pt-2">
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs"
+                [disabled]="selectedCategoryFilters.length === 0"
+                (click)="clearCategoryFilters()"
+              >
+                Clear filters
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          aria-label="Clear categories"
+          title="Clear categories"
+          [disabled]="selectedCategoryFilters.length === 0"
+          (click)="clearCategoryFilters()"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="h-4 w-4"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+
         <div role="tablist" class="tabs tabs-bordered">
           <button
             role="tab"
@@ -98,7 +170,7 @@ function normalizeCatalogUrl(url: string): string {
             (click)="activeTab = 'installed'"
           >
             Installed
-            <span class="badge badge-sm badge-ghost ml-1">{{ installedMods.length }}</span>
+            <span class="badge badge-sm badge-ghost ml-1">{{ installedTabCount }}</span>
           </button>
           <button
             role="tab"
@@ -108,7 +180,7 @@ function normalizeCatalogUrl(url: string): string {
             (click)="setActiveTab('subscribed')"
           >
             Subscribed
-            <span class="badge badge-sm badge-ghost ml-1">{{ subscribedMods.length }}</span>
+            <span class="badge badge-sm badge-ghost ml-1">{{ subscribedTabCount }}</span>
           </button>
           <button
             role="tab"
@@ -118,7 +190,7 @@ function normalizeCatalogUrl(url: string): string {
             (click)="setActiveTab('online')"
           >
             Online
-            <span class="badge badge-sm badge-ghost ml-1">{{ onlineCatalogItems.length }}</span>
+            <span class="badge badge-sm badge-ghost ml-1">{{ onlineTabCount }}</span>
           </button>
         </div>
 
@@ -139,13 +211,35 @@ function normalizeCatalogUrl(url: string): string {
             <p class="text-base-content/60 text-sm px-6 py-5">
               No mods installed yet. Browse Online to add some.
             </p>
+          } @else if (filteredInstalledMods.length === 0) {
+            <p class="text-base-content/60 text-sm px-6 py-5">
+              No installed mods match the selected categories.
+            </p>
           }
-          @for (mod of installedMods; track mod.id) {
+          @for (mod of filteredInstalledMods; track mod.id) {
             <div class="flex items-center gap-3 px-6 py-3.5 border-b border-base-300">
               <div class="flex-1 flex flex-col gap-0.5">
                 <span class="font-semibold text-base-content">{{ mod.name }}</span>
                 @if (mod.description) {
                   <span class="text-xs text-base-content/60">{{ mod.description }}</span>
+                }
+                @if (categoryPillsForMod(mod).length > 0) {
+                  <div class="mt-2 flex flex-wrap gap-1">
+                    @for (pill of categoryPillsForMod(mod); track pill.key) {
+                      <span
+                        class="badge badge-sm px-2 py-2 cursor-pointer"
+                        [class.badge-primary]="
+                          selectedCategoryFilters.length > 0 && isCategoryFilterSelected(pill.key)
+                        "
+                        [class.badge-outline]="
+                          selectedCategoryFilters.length === 0 || !isCategoryFilterSelected(pill.key)
+                        "
+                        (click)="toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))"
+                      >
+                        {{ pill.label }}
+                      </span>
+                    }
+                  </div>
                 }
               </div>
               <div class="flex items-center gap-2">
@@ -176,9 +270,13 @@ function normalizeCatalogUrl(url: string): string {
             <p class="text-base-content/60 text-sm px-6 py-5">
               No subscribed mods yet. Browse Online to subscribe.
             </p>
+          } @else if (filteredSubscribedCatalogItems.length === 0) {
+            <p class="text-base-content/60 text-sm px-6 py-5">
+              No subscribed mods match the selected categories.
+            </p>
           }
           <div class="grid gap-2 px-6 py-4">
-            @for (item of subscribedCatalogItems; track item.key) {
+            @for (item of filteredSubscribedCatalogItems; track item.key) {
               <div class="border border-base-300 rounded-box p-3">
                 <div class="flex items-start gap-3">
                   <div
@@ -238,10 +336,24 @@ function normalizeCatalogUrl(url: string): string {
                       <p class="text-xs text-info m-0 mt-2">Downloading and extracting...</p>
                     }
 
-                    @if (item.tags.length > 0) {
-                      <p class="text-xs text-base-content/50 m-0 mt-1">
-                        {{ item.tags.slice(0, 4).join(' • ') }}
-                      </p>
+                    @if (categoryPillsForItem(item).length > 0) {
+                      <div class="mt-2 flex flex-wrap gap-1">
+                        @for (pill of categoryPillsForItem(item); track pill.key) {
+                          <span
+                            class="badge badge-sm px-2 py-2 cursor-pointer"
+                            [class.badge-primary]="
+                              selectedCategoryFilters.length > 0 && isCategoryFilterSelected(pill.key)
+                            "
+                            [class.badge-outline]="
+                              selectedCategoryFilters.length === 0 ||
+                              !isCategoryFilterSelected(pill.key)
+                            "
+                            (click)="toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))"
+                          >
+                            {{ pill.label }}
+                          </span>
+                        }
+                      </div>
                     }
                   </div>
                 </div>
@@ -260,9 +372,13 @@ function normalizeCatalogUrl(url: string): string {
               <p class="text-xs text-warning m-0">{{ modioError }}</p>
             } @else if (onlineCatalogItems.length === 0) {
               <p class="text-xs text-base-content/60 m-0">No catalog results for this query.</p>
+            } @else if (filteredOnlineCatalogItems.length === 0) {
+              <p class="text-xs text-base-content/60 m-0">
+                No catalog results match the selected categories.
+              </p>
             } @else {
               <div class="grid gap-2">
-                @for (item of onlineCatalogItems; track item.key) {
+                @for (item of filteredOnlineCatalogItems; track item.key) {
                   <div
                     class="border border-base-300 rounded-box p-3 cursor-pointer hover:bg-primary/5"
                     (click)="toggleOnlineExpand(item.key)"
@@ -313,10 +429,25 @@ function normalizeCatalogUrl(url: string): string {
                           </button>
                         </div>
 
-                        @if (item.tags.length > 0) {
-                          <p class="text-xs text-base-content/50 m-0 mt-1">
-                            {{ item.tags.slice(0, 4).join(' • ') }}
-                          </p>
+                        @if (categoryPillsForItem(item).length > 0) {
+                          <div class="mt-2 flex flex-wrap gap-1">
+                            @for (pill of categoryPillsForItem(item); track pill.key) {
+                              <span
+                                class="badge badge-sm px-2 py-2 cursor-pointer"
+                                [class.badge-primary]="
+                                  selectedCategoryFilters.length > 0 &&
+                                  isCategoryFilterSelected(pill.key)
+                                "
+                                [class.badge-outline]="
+                                  selectedCategoryFilters.length === 0 ||
+                                  !isCategoryFilterSelected(pill.key)
+                                "
+                                (click)="toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))"
+                              >
+                                {{ pill.label }}
+                              </span>
+                            }
+                          </div>
                         }
 
                         <p class="text-[11px] text-base-content/40 m-0 mt-1">
@@ -421,6 +552,9 @@ function normalizeCatalogUrl(url: string): string {
   `,
 })
 export class ModsPageComponent {
+  @ViewChild('categoryDropdown')
+  private categoryDropdownRef?: ElementRef<HTMLDetailsElement>;
+
   activeTab: ModsTab = 'installed';
   expandedOnlineKey: string | null = null;
   busyItemKey: string | null = null;
@@ -430,9 +564,11 @@ export class ModsPageComponent {
   modioMods: ModioCatalogItem[] = [];
   modioLoading = false;
   modioError = '';
+  hasHydratedModioCache = false;
   profiles: Profile[] = [];
   approvedMods: ApprovedModDefinition[] = [...APPROVED_MODS];
   profileSelectionsByProfileId: Record<string, Record<string, Record<string, boolean>>> = {};
+  selectedCategoryFilters: string[] = [];
 
   private settings: AppSettings;
   private readonly storage: StorageLike;
@@ -485,6 +621,30 @@ export class ModsPageComponent {
 
   get subscribedCatalogItems(): OnlineCatalogItem[] {
     return this.subscribedMods.map((mod) => this.catalogItemForMod(mod));
+  }
+
+  get installedTabCount(): number {
+    return this.activeTab === 'installed' ? this.filteredInstalledMods.length : this.installedMods.length;
+  }
+
+  get subscribedTabCount(): number {
+    return this.activeTab === 'subscribed'
+      ? this.filteredSubscribedCatalogItems.length
+      : this.subscribedMods.length;
+  }
+
+  get onlineTabCount(): number {
+    return this.activeTab === 'online'
+      ? this.filteredOnlineCatalogItems.length
+      : this.onlineCatalogItems.length;
+  }
+
+  get filteredInstalledMods(): ModEntry[] {
+    return this.installedMods.filter((mod) => this.matchesCategoryFilters(this.categoryKeysForMod(mod)));
+  }
+
+  get filteredSubscribedCatalogItems(): OnlineCatalogItem[] {
+    return this.subscribedCatalogItems.filter((item) => this.matchesCategoryFilters(this.categoryKeysForItem(item)));
   }
 
   get onlineCatalogItems(): OnlineCatalogItem[] {
@@ -541,6 +701,32 @@ export class ModsPageComponent {
     return Array.from(merged.values());
   }
 
+  get filteredOnlineCatalogItems(): OnlineCatalogItem[] {
+    return this.onlineCatalogItems.filter((item) => this.matchesCategoryFilters(this.categoryKeysForItem(item)));
+  }
+
+  get availableCategoryFilters(): CategoryFilterOption[] {
+    const counts = new Map<string, number>();
+    const labels = new Map<string, string>();
+
+    for (const keys of this.currentTabCategoryKeys()) {
+      for (const key of keys) {
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+        if (!labels.has(key)) {
+          labels.set(key, key === UNCATEGORIZED_KEY ? UNCATEGORIZED_LABEL : key);
+        }
+      }
+    }
+
+    return Array.from(counts.entries())
+      .map(([key, count]) => ({
+        key,
+        label: labels.get(key) ?? key,
+        count,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   modByApprovedId(profileId: string, approvedId: string): ModEntry | undefined {
     if (!profileId) return undefined;
     const mods = Object.values(
@@ -570,8 +756,45 @@ export class ModsPageComponent {
 
   setActiveTab(tab: ModsTab): void {
     this.activeTab = tab;
+    this.clearCategoryFilters();
     if (this.modioMods.length === 0 && !this.modioLoading) {
       void this.loadModioCatalog();
+    }
+  }
+
+  isCategoryFilterSelected(key: string): boolean {
+    return this.selectedCategoryFilters.includes(key);
+  }
+
+  toggleCategoryFilter(key: string, checked: boolean): void {
+    if (checked) {
+      if (!this.selectedCategoryFilters.includes(key)) {
+        this.selectedCategoryFilters = [...this.selectedCategoryFilters, key];
+      }
+      return;
+    }
+
+    this.selectedCategoryFilters = this.selectedCategoryFilters.filter((selected) => selected !== key);
+  }
+
+  clearCategoryFilters(): void {
+    this.selectedCategoryFilters = [];
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const dropdownElement = this.categoryDropdownRef?.nativeElement;
+    if (!dropdownElement?.open) {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof Node)) {
+      return;
+    }
+
+    if (!dropdownElement.contains(target)) {
+      dropdownElement.open = false;
     }
   }
 
@@ -589,6 +812,80 @@ export class ModsPageComponent {
 
   private isSubscriptionTrackedMod(mod: ModEntry): boolean {
     return Boolean(mod.approvedModId || mod.modioModId);
+  }
+
+  private normalizeCategory(tag: string): string {
+    const trimmed = tag.trim();
+    return trimmed ? trimmed.toLowerCase() : '';
+  }
+
+  private categoryKeysForItem(item: OnlineCatalogItem): string[] {
+    const unique = new Set<string>();
+    for (const tag of item.tags) {
+      const normalized = this.normalizeCategory(tag);
+      if (normalized) {
+        unique.add(normalized);
+      }
+    }
+
+    if (unique.size === 0) {
+      return [UNCATEGORIZED_KEY];
+    }
+
+    return Array.from(unique.values());
+  }
+
+  private categoryKeysForMod(mod: ModEntry): string[] {
+    return this.categoryKeysForItem(this.catalogItemForMod(mod));
+  }
+
+  categoryLabelsForItem(item: OnlineCatalogItem): string[] {
+    return this.categoryKeysForItem(item).map((key) =>
+      key === UNCATEGORIZED_KEY ? UNCATEGORIZED_LABEL : this.toCategoryLabel(key),
+    );
+  }
+
+  categoryLabelsForMod(mod: ModEntry): string[] {
+    return this.categoryLabelsForItem(this.catalogItemForMod(mod));
+  }
+
+  categoryPillsForItem(item: OnlineCatalogItem): Array<{ key: string; label: string }> {
+    return this.categoryKeysForItem(item).map((key) => ({
+      key,
+      label: key === UNCATEGORIZED_KEY ? UNCATEGORIZED_LABEL : this.toCategoryLabel(key),
+    }));
+  }
+
+  categoryPillsForMod(mod: ModEntry): Array<{ key: string; label: string }> {
+    return this.categoryPillsForItem(this.catalogItemForMod(mod));
+  }
+
+  private toCategoryLabel(key: string): string {
+    return key
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  private matchesCategoryFilters(keys: string[]): boolean {
+    if (this.selectedCategoryFilters.length === 0) {
+      return true;
+    }
+
+    return keys.some((key) => this.selectedCategoryFilters.includes(key));
+  }
+
+  private currentTabCategoryKeys(): string[][] {
+    if (this.activeTab === 'online') {
+      return this.onlineCatalogItems.map((item) => this.categoryKeysForItem(item));
+    }
+
+    if (this.activeTab === 'subscribed') {
+      return this.subscribedCatalogItems.map((item) => this.categoryKeysForItem(item));
+    }
+
+    return this.installedMods.map((mod) => this.categoryKeysForMod(mod));
   }
 
   isOptionSelected(mod: ModEntry, option: ApprovedModOption): boolean {
@@ -757,7 +1054,7 @@ export class ModsPageComponent {
     try {
       this.approvedMods = await searchCatalog(this.searchQuery, 200);
       if (this.activeTab === 'online') {
-        await this.loadModioCatalog();
+        this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
       }
     } catch {
       // Keep existing list when DB search is unavailable.
@@ -770,19 +1067,32 @@ export class ModsPageComponent {
     const modioApiKey = getModioApiKey();
 
     try {
-      this.modioMods = await fetchModioCatalog({
-        gameId: MODIO_GAME_ID,
-        apiKey: modioApiKey,
-        query: this.searchQuery,
-      });
+      this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
 
-      if (!modioApiKey.trim()) {
+      const shouldRefreshFromApi =
+        Boolean(modioApiKey.trim()) &&
+        (!this.hasHydratedModioCache || this.modioMods.length === 0 || !this.searchQuery.trim());
+      if (shouldRefreshFromApi) {
+        const allItems = await fetchAllModioCatalog({
+          gameId: MODIO_GAME_ID,
+          apiKey: modioApiKey,
+          pageSize: 100,
+          maxPages: 200,
+        });
+        await syncModioCatalog(allItems);
+        this.hasHydratedModioCache = true;
+        this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
+      }
+
+      if (!modioApiKey.trim() && this.modioMods.length === 0) {
         this.modioError = 'mod.io API key is not configured for this build.';
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch mod.io results.';
-      this.modioError = message;
-      this.modioMods = [];
+      const message = error instanceof Error ? error.message : String(error);
+      this.modioError =
+        this.modioMods.length > 0
+          ? `Using cached mod.io catalog. Refresh failed: ${message}`
+          : message;
     } finally {
       this.modioLoading = false;
     }

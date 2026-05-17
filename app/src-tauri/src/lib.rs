@@ -48,7 +48,42 @@ struct CatalogModEntryRecord {
     options_json: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ModioCatalogEntryInput {
+    modio_id: i64,
+    name: String,
+    summary: String,
+    profile_url: String,
+    thumbnail_url: String,
+    download_url: String,
+    modfile_id: i64,
+    modfile_version: String,
+    tags_json: String,
+    date_updated: i64,
+    downloads_total: i64,
+    subscribers_total: i64,
+}
+
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ModioCatalogEntryRecord {
+    modio_id: i64,
+    name: String,
+    summary: String,
+    profile_url: String,
+    thumbnail_url: String,
+    download_url: String,
+    modfile_id: i64,
+    modfile_version: String,
+    tags_json: String,
+    date_updated: i64,
+    downloads_total: i64,
+    subscribers_total: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct ProfileModSelectionRecord {
     mod_id: String,
     selected_options_json: String,
@@ -96,8 +131,28 @@ fn open_catalog_connection(app: &tauri::AppHandle) -> Result<Connection, String>
           PRIMARY KEY (profile_id, mod_id)
         );
 
+                CREATE TABLE IF NOT EXISTS modio_mods (
+                    modio_id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    profile_url TEXT NOT NULL,
+                    thumbnail_url TEXT NOT NULL,
+                    download_url TEXT NOT NULL,
+                    modfile_id INTEGER NOT NULL,
+                    modfile_version TEXT NOT NULL,
+                    tags_json TEXT NOT NULL,
+                    date_updated INTEGER NOT NULL,
+                    downloads_total INTEGER NOT NULL,
+                    subscribers_total INTEGER NOT NULL,
+                    updated_at INTEGER NOT NULL
+                );
+
+                CREATE VIRTUAL TABLE IF NOT EXISTS modio_mods_fts
+                USING fts5(modio_id UNINDEXED, name, summary, tags, tokenize='unicode61');
+
         CREATE INDEX IF NOT EXISTS idx_profile_mods_profile ON profile_mods(profile_id);
         CREATE INDEX IF NOT EXISTS idx_profile_mods_mod ON profile_mods(mod_id);
+        CREATE INDEX IF NOT EXISTS idx_modio_mods_updated ON modio_mods(date_updated DESC);
         ",
     )
     .map_err(|e| format!("Failed applying SQLite schema: {e}"))?;
@@ -260,6 +315,180 @@ fn search_mod_catalog(
 
     for row in rows {
         records.push(row.map_err(|e| format!("Failed reading search row: {e}"))?);
+    }
+
+    Ok(records)
+}
+
+#[tauri::command]
+fn sync_modio_catalog(
+    app: tauri::AppHandle,
+    entries: Vec<ModioCatalogEntryInput>,
+) -> Result<(), String> {
+    let mut conn = open_catalog_connection(&app)?;
+    let tx = conn
+        .transaction()
+        .map_err(|e| format!("Failed starting SQLite transaction: {e}"))?;
+
+    let updated_at = current_unix_timestamp();
+
+    for entry in &entries {
+        tx.execute(
+            "
+            INSERT INTO modio_mods (
+              modio_id, name, summary, profile_url, thumbnail_url, download_url,
+              modfile_id, modfile_version, tags_json, date_updated, downloads_total,
+              subscribers_total, updated_at
+            )
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+            ON CONFLICT(modio_id) DO UPDATE SET
+              name=excluded.name,
+              summary=excluded.summary,
+              profile_url=excluded.profile_url,
+              thumbnail_url=excluded.thumbnail_url,
+              download_url=excluded.download_url,
+              modfile_id=excluded.modfile_id,
+              modfile_version=excluded.modfile_version,
+              tags_json=excluded.tags_json,
+              date_updated=excluded.date_updated,
+              downloads_total=excluded.downloads_total,
+              subscribers_total=excluded.subscribers_total,
+              updated_at=excluded.updated_at
+            ",
+            params![
+                entry.modio_id,
+                entry.name,
+                entry.summary,
+                entry.profile_url,
+                entry.thumbnail_url,
+                entry.download_url,
+                entry.modfile_id,
+                entry.modfile_version,
+                entry.tags_json,
+                entry.date_updated,
+                entry.downloads_total,
+                entry.subscribers_total,
+                updated_at,
+            ],
+        )
+        .map_err(|e| format!("Failed upserting mod.io catalog mod '{}': {e}", entry.modio_id))?;
+
+        tx.execute(
+            "DELETE FROM modio_mods_fts WHERE modio_id = ?1",
+            params![entry.modio_id],
+        )
+        .map_err(|e| {
+            format!(
+                "Failed pruning mod.io search index for '{}': {e}",
+                entry.modio_id
+            )
+        })?;
+
+        tx.execute(
+            "
+            INSERT INTO modio_mods_fts (modio_id, name, summary, tags)
+            VALUES (?1, ?2, ?3, ?4)
+            ",
+            params![entry.modio_id, entry.name, entry.summary, entry.tags_json],
+        )
+        .map_err(|e| format!("Failed indexing mod.io mod '{}': {e}", entry.modio_id))?;
+    }
+
+    tx.commit()
+        .map_err(|e| format!("Failed committing SQLite transaction: {e}"))?;
+    Ok(())
+}
+
+#[tauri::command]
+fn search_modio_catalog(
+    app: tauri::AppHandle,
+    query: String,
+    limit: Option<i64>,
+) -> Result<Vec<ModioCatalogEntryRecord>, String> {
+    let conn = open_catalog_connection(&app)?;
+    let row_limit = limit.unwrap_or(2000).clamp(1, 5000);
+    let trimmed = query.trim();
+
+    let sql_all = "
+      SELECT
+        modio_id, name, summary, profile_url, thumbnail_url, download_url,
+        modfile_id, modfile_version, tags_json, date_updated, downloads_total, subscribers_total
+      FROM modio_mods
+      ORDER BY date_updated DESC, name COLLATE NOCASE
+      LIMIT ?1
+    ";
+
+    let sql_search = "
+      SELECT
+        m.modio_id, m.name, m.summary, m.profile_url, m.thumbnail_url, m.download_url,
+        m.modfile_id, m.modfile_version, m.tags_json, m.date_updated, m.downloads_total, m.subscribers_total
+      FROM modio_mods_fts f
+      JOIN modio_mods m ON m.modio_id = f.modio_id
+      WHERE modio_mods_fts MATCH ?1
+      ORDER BY bm25(modio_mods_fts)
+      LIMIT ?2
+    ";
+
+    let mut records = Vec::new();
+    if trimmed.is_empty() {
+        let mut stmt = conn
+            .prepare(sql_all)
+            .map_err(|e| format!("Failed preparing mod.io catalog query: {e}"))?;
+        let rows = stmt
+            .query_map(params![row_limit], |row| {
+                Ok(ModioCatalogEntryRecord {
+                    modio_id: row.get(0)?,
+                    name: row.get(1)?,
+                    summary: row.get(2)?,
+                    profile_url: row.get(3)?,
+                    thumbnail_url: row.get(4)?,
+                    download_url: row.get(5)?,
+                    modfile_id: row.get(6)?,
+                    modfile_version: row.get(7)?,
+                    tags_json: row.get(8)?,
+                    date_updated: row.get(9)?,
+                    downloads_total: row.get(10)?,
+                    subscribers_total: row.get(11)?,
+                })
+            })
+            .map_err(|e| format!("Failed executing mod.io catalog query: {e}"))?;
+
+        for row in rows {
+            records.push(row.map_err(|e| format!("Failed reading mod.io catalog row: {e}"))?);
+        }
+
+        return Ok(records);
+    }
+
+    let match_query = to_match_query(trimmed);
+    if match_query.is_empty() {
+        return Ok(records);
+    }
+
+    let mut stmt = conn
+        .prepare(sql_search)
+        .map_err(|e| format!("Failed preparing mod.io search query: {e}"))?;
+    let rows = stmt
+        .query_map(params![match_query, row_limit], |row| {
+            Ok(ModioCatalogEntryRecord {
+                modio_id: row.get(0)?,
+                name: row.get(1)?,
+                summary: row.get(2)?,
+                profile_url: row.get(3)?,
+                thumbnail_url: row.get(4)?,
+                download_url: row.get(5)?,
+                modfile_id: row.get(6)?,
+                modfile_version: row.get(7)?,
+                tags_json: row.get(8)?,
+                date_updated: row.get(9)?,
+                downloads_total: row.get(10)?,
+                subscribers_total: row.get(11)?,
+            })
+        })
+        .map_err(|e| format!("Failed executing mod.io search query: {e}"))?;
+
+    for row in rows {
+        records.push(row.map_err(|e| format!("Failed reading mod.io search row: {e}"))?);
     }
 
     Ok(records)
@@ -731,6 +960,8 @@ pub fn run() {
             deploy_launch_restore,
             sync_mod_catalog,
             search_mod_catalog,
+            sync_modio_catalog,
+            search_modio_catalog,
             upsert_profile_mod_selection,
             get_profile_mod_selections
         ])

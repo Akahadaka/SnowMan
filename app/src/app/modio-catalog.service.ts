@@ -168,3 +168,41 @@ export async function fetchModioCatalog(
   const normalized = rows.map((row) => normalizeItem(row));
   return filterByQuery(normalized, params.query);
 }
+
+export async function fetchAllModioCatalog(
+  params: Omit<FetchModioCatalogParams, 'query' | 'offset' | 'limit'> & {
+    pageSize?: number;
+    maxPages?: number;
+  },
+  fetchFn: FetchLike = (input) => fetch(input),
+): Promise<ModioCatalogItem[]> {
+  const apiKey = params.apiKey.trim();
+  if (!apiKey) {
+    return [];
+  }
+
+  const pageSize = Math.max(1, params.pageSize ?? 100);
+  const maxPages = Math.max(1, params.maxPages ?? 100);
+
+  const allItems: ModioCatalogItem[] = [];
+  for (let page = 0; page < maxPages; page += 1) {
+    const offset = page * pageSize;
+    const pageItems = await fetchModioCatalog(
+      {
+        gameId: params.gameId,
+        apiKey,
+        query: '',
+        limit: pageSize,
+        offset,
+      },
+      fetchFn,
+    );
+
+    allItems.push(...pageItems);
+    if (pageItems.length < pageSize) {
+      break;
+    }
+  }
+
+  return allItems;
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildModioCatalogUrl,
+  fetchAllModioCatalog,
   fetchModioCatalog,
   type ModioCatalogItem,
 } from './modio-catalog.service';
@@ -136,5 +137,37 @@ describe('modio catalog service', () => {
       downloadsTotal: 0,
       subscribersTotal: 0,
     });
+  });
+
+  it('fetches multiple pages until a short page is returned', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [
+            { id: 1, name: 'A', profile_url: 'https://mod.io/a' },
+            { id: 2, name: 'B', profile_url: 'https://mod.io/b' },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{ id: 3, name: 'C', profile_url: 'https://mod.io/c' }],
+        }),
+      });
+
+    const items = await fetchAllModioCatalog(
+      {
+        gameId: 306,
+        apiKey: 'abc123',
+        pageSize: 2,
+      },
+      fetchMock,
+    );
+
+    expect(items.map((item) => item.id)).toEqual([1, 2, 3]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

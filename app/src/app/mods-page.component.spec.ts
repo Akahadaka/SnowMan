@@ -466,4 +466,111 @@ describe('ModsPageComponent', () => {
 
     expect(component.isUpdateAvailable(component.installedMods[0])).toBe(true);
   });
+
+  it('filters online catalog items by selected category', () => {
+    const component = new ModsPageComponent();
+    component.activeTab = 'online';
+    component.modioMods = [
+      {
+        id: 101,
+        name: 'Mud Master',
+        summary: 'Mud tuning',
+        profileUrl: 'https://mod.io/g/snowrunner/m/mud-master',
+        thumbnailUrl: '',
+        downloadUrl: 'https://cdn.example/mud.zip',
+        tags: ['Gameplay'],
+        dateUpdated: 1700000000,
+        downloadsTotal: 11,
+        subscribersTotal: 4,
+      },
+      {
+        id: 102,
+        name: 'Visual Pack',
+        summary: 'Visual changes',
+        profileUrl: 'https://mod.io/g/snowrunner/m/visual-pack',
+        thumbnailUrl: '',
+        downloadUrl: 'https://cdn.example/visual.zip',
+        tags: ['Visual'],
+        dateUpdated: 1700000000,
+        downloadsTotal: 8,
+        subscribersTotal: 2,
+      },
+    ];
+
+    expect(component.filteredOnlineCatalogItems).toHaveLength(3);
+    component.toggleCategoryFilter('gameplay', true);
+
+    expect(component.filteredOnlineCatalogItems.map((item) => item.name)).toContain('Mud Master');
+    expect(component.filteredOnlineCatalogItems.map((item) => item.name)).not.toContain('Visual Pack');
+  });
+
+  it('filters installed mods by category from linked catalog item', () => {
+    const component = new ModsPageComponent();
+    const settingsWithProfile = {
+      ...DEFAULT_SETTINGS,
+      stores: {
+        steam: {
+          games: {
+            snowrunner: {
+              installPath: 'D:/SnowRunner',
+              profileRootPath: 'D:/SnowRunner/profiles',
+              activeProfileId: 'profile-1',
+              profiles: {
+                'profile-1': {
+                  id: 'profile-1',
+                  name: 'Profile 1',
+                  createdAt: '2026-01-01T00:00:00.000Z',
+                  updatedAt: '2026-01-01T00:00:00.000Z',
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    (component as unknown as { settings: AppSettings }).settings = addModToProfile(
+      settingsWithProfile,
+      'steam',
+      'snowrunner',
+      'profile-1',
+      {
+        id: 'modio-101',
+        name: 'Mud Master',
+        sourceFolderPath: 'D:/mods/modio-101',
+        importedAt: '2026-01-01T00:00:00.000Z',
+        installState: 'installed',
+        modioModId: 101,
+      },
+    );
+    component.modioMods = [
+      {
+        id: 101,
+        name: 'Mud Master',
+        summary: 'Mud tuning',
+        profileUrl: 'https://mod.io/g/snowrunner/m/mud-master',
+        thumbnailUrl: '',
+        downloadUrl: 'https://cdn.example/mud.zip',
+        tags: ['Gameplay'],
+        dateUpdated: 1700000000,
+        downloadsTotal: 11,
+        subscribersTotal: 4,
+      },
+    ];
+    component.profiles = [
+      {
+        id: 'profile-1',
+        name: 'Profile 1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+
+    expect(component.filteredInstalledMods).toHaveLength(1);
+    component.toggleCategoryFilter('visual', true);
+    expect(component.filteredInstalledMods).toHaveLength(0);
+    component.clearCategoryFilters();
+    component.toggleCategoryFilter('gameplay', true);
+    expect(component.filteredInstalledMods).toHaveLength(1);
+  });
 });

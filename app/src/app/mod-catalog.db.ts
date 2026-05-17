@@ -1,5 +1,10 @@
-import { tauriInvoke, type CatalogDbEntryInput } from './tauri.bridge';
+import {
+  tauriInvoke,
+  type CatalogDbEntryInput,
+  type ModioCatalogDbEntryInput,
+} from './tauri.bridge';
 import type { ApprovedModDefinition } from './mod.types';
+import type { ModioCatalogItem } from './modio-catalog.service';
 
 function toCatalogInput(mod: ApprovedModDefinition): CatalogDbEntryInput {
   return {
@@ -52,6 +57,58 @@ export async function searchCatalog(query: string, limit = 200): Promise<Approve
   return rows
     .map((row) => parseCatalogRow(row))
     .filter((row): row is ApprovedModDefinition => Boolean(row));
+}
+
+function toModioCatalogInput(item: ModioCatalogItem): ModioCatalogDbEntryInput {
+  return {
+    modioId: item.id,
+    name: item.name,
+    summary: item.summary,
+    profileUrl: item.profileUrl,
+    thumbnailUrl: item.thumbnailUrl,
+    downloadUrl: item.downloadUrl,
+    modfileId: item.modfileId,
+    modfileVersion: item.modfileVersion,
+    tagsJson: JSON.stringify(item.tags),
+    dateUpdated: item.dateUpdated,
+    downloadsTotal: item.downloadsTotal,
+    subscribersTotal: item.subscribersTotal,
+  };
+}
+
+function parseModioTagsJson(tagsJson: string): string[] {
+  try {
+    const parsed = JSON.parse(tagsJson) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function syncModioCatalog(items: ReadonlyArray<ModioCatalogItem>): Promise<void> {
+  await tauriInvoke('sync_modio_catalog', {
+    entries: items.map((item) => toModioCatalogInput(item)),
+  });
+}
+
+export async function searchModioCatalog(query: string, limit = 2000): Promise<ModioCatalogItem[]> {
+  const rows = await tauriInvoke('search_modio_catalog', { query, limit });
+  return rows.map((row) => ({
+    id: row.modioId,
+    name: row.name,
+    summary: row.summary,
+    profileUrl: row.profileUrl,
+    thumbnailUrl: row.thumbnailUrl,
+    downloadUrl: row.downloadUrl,
+    modfileId: row.modfileId,
+    modfileVersion: row.modfileVersion,
+    tags: parseModioTagsJson(row.tagsJson),
+    dateUpdated: row.dateUpdated,
+    downloadsTotal: row.downloadsTotal,
+    subscribersTotal: row.subscribersTotal,
+  }));
 }
 
 export async function saveProfileSelection(
