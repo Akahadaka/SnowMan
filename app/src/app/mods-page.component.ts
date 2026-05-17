@@ -23,14 +23,13 @@ import type { Profile } from './profile.types';
 import {
   loadSettings,
   mergeSettings,
+  resolveModioCredential,
   saveSettings,
   type AppSettings,
   type StorageLike,
 } from './settings.persistence';
 
 type ModsTab = 'installed' | 'online' | 'subscribed';
-
-type GlobalWithModioKey = typeof globalThis & { MODIO_API_KEY?: string };
 
 interface OnlineCatalogItem {
   key: string;
@@ -56,10 +55,6 @@ interface CategoryFilterOption {
 const MODIO_GAME_ID = 306;
 const UNCATEGORIZED_KEY = '__uncategorized';
 const UNCATEGORIZED_LABEL = 'Uncategorized';
-
-function getModioApiKey(): string {
-  return (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
-}
 
 function normalizeCatalogUrl(url: string): string {
   const trimmed = url.trim();
@@ -593,7 +588,7 @@ export class ModsPageComponent implements OnInit {
     this.settings = loadSettings(this.storage);
     this.refreshProfiles();
     void this.initializeCatalog();
-    if (getModioApiKey().trim()) {
+    if (resolveModioCredential(this.settings).value) {
       void this.loadModioCatalog();
     }
   }
@@ -1095,7 +1090,9 @@ export class ModsPageComponent implements OnInit {
   async loadModioCatalog(): Promise<void> {
     this.modioLoading = true;
     this.modioError = '';
-    const modioApiKey = getModioApiKey();
+    const cred = resolveModioCredential(this.settings);
+    const modioApiKey = cred.value;
+    const authMode = cred.mode === 'bearer' ? 'bearer' : 'apikey';
 
     try {
       this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
@@ -1110,6 +1107,7 @@ export class ModsPageComponent implements OnInit {
           apiKey: modioApiKey,
           pageSize: 100,
           maxPages: 200,
+          authMode,
         });
         await syncModioCatalog(allItems);
         this.settings = mergeSettings({ hasHydratedModioCache: true }, this.settings);
@@ -1118,7 +1116,7 @@ export class ModsPageComponent implements OnInit {
       }
 
       if (!modioApiKey.trim() && this.modioMods.length === 0) {
-        this.modioError = 'mod.io API key is not configured for this build.';
+        this.modioError = 'Sign in to mod.io in Settings to browse mods.';
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

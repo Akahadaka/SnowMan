@@ -5,6 +5,7 @@ import {
   getInstallPathForStore,
   loadSettings,
   mergeSettings,
+  resolveModioCredential,
   saveSettings,
   type AppSettings,
   type StorageLike,
@@ -24,6 +25,9 @@ import {
   type GameOption,
   type StoreOption,
 } from './game-context';
+import { exchangeEmailCode, requestEmailCode } from './modio-auth.service';
+
+const MODIO_GAME_ID = 306;
 
 @Component({
   selector: 'app-settings-page',
@@ -86,6 +90,79 @@ import {
           >
         </div>
       </form>
+
+      <div class="p-6 max-w-2xl border-t border-base-300">
+        <h2 class="text-base font-semibold mb-4 mt-0">mod.io Account</h2>
+
+        @if (settings.modioAccessToken) {
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-base-content/70"
+              >Signed in as <strong>{{ settings.modioEmail || 'mod.io user' }}</strong></span
+            >
+            <button type="button" class="btn btn-outline btn-sm btn-error" (click)="modioSignOut()">
+              Sign out
+            </button>
+          </div>
+        } @else if (modioCodeSent) {
+          <p class="text-sm text-base-content/70 mb-3">
+            Enter the security code sent to <strong>{{ modioEmail }}</strong
+            >.
+          </p>
+          <div class="flex gap-2 items-end">
+            <div class="flex flex-col gap-1 flex-1">
+              <label class="label-text text-xs" for="modioCode">Security code</label>
+              <input
+                id="modioCode"
+                name="modioCode"
+                type="text"
+                class="input input-bordered input-sm"
+                [(ngModel)]="modioCode"
+                placeholder="e.g. 123456"
+                autocomplete="one-time-code"
+              />
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [class.loading]="modioVerifying"
+              [disabled]="modioVerifying || !modioCode.trim()"
+              (click)="modioVerifyCode()"
+            >
+              {{ modioVerifying ? 'Verifying…' : 'Verify' }}
+            </button>
+          </div>
+          @if (modioError) {
+            <p class="text-sm text-error mt-2">{{ modioError }}</p>
+          }
+        } @else {
+          <div class="flex gap-2 items-end">
+            <div class="flex flex-col gap-1 flex-1">
+              <label class="label-text text-xs" for="modioEmail">Email address</label>
+              <input
+                id="modioEmail"
+                name="modioEmail"
+                type="email"
+                class="input input-bordered input-sm"
+                [(ngModel)]="modioEmail"
+                placeholder="you@example.com"
+                autocomplete="email"
+              />
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [class.loading]="modioSending"
+              [disabled]="modioSending || !modioEmail.trim()"
+              (click)="modioRequestCode()"
+            >
+              {{ modioSending ? 'Sending…' : 'Send code' }}
+            </button>
+          </div>
+          @if (modioError) {
+            <p class="text-sm text-error mt-2">{{ modioError }}</p>
+          }
+        }
+      </div>
     </div>
   `,
   styles: ``,
@@ -96,6 +173,13 @@ export class SettingsPageComponent {
 
   form: SettingsFormValues;
   saveState: 'idle' | 'saved' = 'idle';
+
+  modioEmail = '';
+  modioCode = '';
+  modioCodeSent = false;
+  modioSending = false;
+  modioVerifying = false;
+  modioError = '';
 
   private readonly storage: StorageLike;
   settings: AppSettings;
@@ -158,6 +242,57 @@ export class SettingsPageComponent {
       gameInstallPath: selectedPath,
     });
     this.saveState = 'idle';
+  }
+
+  async modioRequestCode(): Promise<void> {
+    this.modioError = '';
+    this.modioSending = true;
+    try {
+      const cred = resolveModioCredential(this.settings);
+      const apiKey = cred.mode === 'apikey' ? cred.value : '';
+      await requestEmailCode(this.modioEmail.trim(), apiKey, MODIO_GAME_ID);
+      this.modioCodeSent = true;
+    } catch (e) {
+      this.modioError = e instanceof Error ? e.message : 'Failed to send code.';
+    } finally {
+      this.modioSending = false;
+    }
+  }
+
+  async modioVerifyCode(): Promise<void> {
+    this.modioError = '';
+    this.modioVerifying = true;
+    try {
+      const cred = resolveModioCredential(this.settings);
+      const apiKey = cred.mode === 'apikey' ? cred.value : '';
+      const token = await exchangeEmailCode(
+        this.modioEmail.trim(),
+        this.modioCode.trim(),
+        apiKey,
+        MODIO_GAME_ID,
+      );
+      this.settings = {
+        ...this.settings,
+        modioAccessToken: token,
+        modioEmail: this.modioEmail.trim(),
+      };
+      saveSettings(this.storage, this.settings);
+      this.modioCodeSent = false;
+      this.modioCode = '';
+    } catch (e) {
+      this.modioError = e instanceof Error ? e.message : 'Verification failed.';
+    } finally {
+      this.modioVerifying = false;
+    }
+  }
+
+  modioSignOut(): void {
+    this.settings = { ...this.settings, modioAccessToken: '', modioEmail: '' };
+    saveSettings(this.storage, this.settings);
+    this.modioEmail = '';
+    this.modioCode = '';
+    this.modioCodeSent = false;
+    this.modioError = '';
   }
 
   private resolveStorage(): StorageLike {

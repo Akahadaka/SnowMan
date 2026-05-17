@@ -47,6 +47,8 @@ describe('settings page logic', () => {
       autoBackupOnDeploy: false,
       onboardingComplete: false,
       hasHydratedModioCache: false,
+      modioAccessToken: '',
+      modioEmail: '',
       stores: {
         steam: {
           games: {

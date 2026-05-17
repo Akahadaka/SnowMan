@@ -22,6 +22,31 @@ describe('modio catalog service', () => {
     expect(url).toContain('_sort=-date_updated');
   });
 
+  it('builds bearer URL without api_key query param', () => {
+    const url = buildModioCatalogUrl({
+      gameId: 306,
+      apiKey: 'tok_abc',
+      limit: 50,
+      offset: 0,
+      authMode: 'bearer',
+    });
+
+    expect(url).toContain('https://g-306.modapi.io/v1/games/306/mods');
+    expect(url).not.toContain('api_key');
+  });
+
+  it('sends Authorization header when authMode is bearer', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [] }),
+    });
+
+    await fetchModioCatalog({ gameId: 306, apiKey: 'tok_abc', query: '' }, fetchMock, 'bearer');
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init?.headers as Record<string, string>)?.['Authorization']).toBe('Bearer tok_abc');
+  });
+
   it('maps API rows into catalog items and filters by search text', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

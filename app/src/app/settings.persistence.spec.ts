@@ -55,6 +55,8 @@ describe('settings persistence', () => {
       autoBackupOnDeploy: false,
       onboardingComplete: false,
       hasHydratedModioCache: false,
+      modioAccessToken: '',
+      modioEmail: '',
       stores: {
         steam: {
           games: {
@@ -79,6 +81,10 @@ describe('settings persistence', () => {
       selectedGameId: SNOWRUNNER_GAME_ID,
       selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: true,
+      onboardingComplete: true,
+      hasHydratedModioCache: false,
+      modioAccessToken: '',
+      modioEmail: '',
       stores: {
         steam: {
           games: {
@@ -111,6 +117,10 @@ describe('settings persistence', () => {
       selectedGameId: SNOWRUNNER_GAME_ID,
       selectedStoreId: STEAM_STORE_ID,
       autoBackupOnDeploy: false,
+      onboardingComplete: true,
+      hasHydratedModioCache: false,
+      modioAccessToken: '',
+      modioEmail: '',
       stores: {
         steam: {
           games: {

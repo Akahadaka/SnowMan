@@ -21,13 +21,15 @@ export interface FetchModioCatalogParams {
   offset?: number;
 }
 
+export type ModioAuthMode = 'apikey' | 'bearer';
+
 interface FetchResponseLike {
   ok: boolean;
   status?: number;
   json: () => Promise<unknown>;
 }
 
-type FetchLike = (input: string) => Promise<FetchResponseLike>;
+type FetchLike = (input: string, init?: RequestInit) => Promise<FetchResponseLike>;
 
 interface ModioTagLike {
   name?: unknown;
@@ -83,17 +85,22 @@ export function buildModioCatalogUrl(params: {
   apiKey: string;
   limit?: number;
   offset?: number;
+  authMode?: ModioAuthMode;
 }): string {
   const gameId = params.gameId;
   const limit = params.limit ?? 100;
   const offset = params.offset ?? 0;
+  const authMode = params.authMode ?? 'apikey';
 
-  const query = new URLSearchParams({
-    api_key: params.apiKey,
+  const queryParams: Record<string, string> = {
     _limit: String(limit),
     _offset: String(offset),
     _sort: '-date_updated',
-  });
+  };
+  if (authMode === 'apikey') {
+    queryParams['api_key'] = params.apiKey;
+  }
+  const query = new URLSearchParams(queryParams);
 
   return `https://g-${gameId}.modapi.io/v1/games/${gameId}/mods?${query.toString()}`;
 }
@@ -144,7 +151,8 @@ function filterByQuery(items: ModioCatalogItem[], rawQuery: string): ModioCatalo
 
 export async function fetchModioCatalog(
   params: FetchModioCatalogParams,
-  fetchFn: FetchLike = (input) => fetch(input),
+  fetchFn: FetchLike = (input, init) => fetch(input, init),
+  authMode: ModioAuthMode = 'apikey',
 ): Promise<ModioCatalogItem[]> {
   const apiKey = params.apiKey.trim();
   if (!apiKey) {
@@ -156,9 +164,15 @@ export async function fetchModioCatalog(
     apiKey,
     limit: params.limit,
     offset: params.offset,
+    authMode,
   });
 
-  const response = await fetchFn(url);
+  const headers: Record<string, string> = {};
+  if (authMode === 'bearer') {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetchFn(url, Object.keys(headers).length ? { headers } : undefined);
   if (!response.ok) {
     throw new Error(`mod.io request failed with status ${response.status ?? 'unknown'}`);
   }
@@ -173,8 +187,9 @@ export async function fetchAllModioCatalog(
   params: Omit<FetchModioCatalogParams, 'query' | 'offset' | 'limit'> & {
     pageSize?: number;
     maxPages?: number;
+    authMode?: ModioAuthMode;
   },
-  fetchFn: FetchLike = (input) => fetch(input),
+  fetchFn: FetchLike = (input, init) => fetch(input, init),
 ): Promise<ModioCatalogItem[]> {
   const apiKey = params.apiKey.trim();
   if (!apiKey) {
@@ -183,6 +198,7 @@ export async function fetchAllModioCatalog(
 
   const pageSize = Math.max(1, params.pageSize ?? 100);
   const maxPages = Math.max(1, params.maxPages ?? 100);
+  const authMode = params.authMode ?? 'apikey';
 
   const allItems: ModioCatalogItem[] = [];
   for (let page = 0; page < maxPages; page += 1) {
@@ -196,6 +212,7 @@ export async function fetchAllModioCatalog(
         offset,
       },
       fetchFn,
+      authMode,
     );
 
     allItems.push(...pageItems);
