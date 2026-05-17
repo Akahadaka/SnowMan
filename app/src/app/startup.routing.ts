@@ -5,11 +5,11 @@ import type { AppSettings } from './settings.persistence';
  * based on whether the user has completed the first-run onboarding wizard.
  *
  * - First-run (onboardingComplete: false): guided flow starting at /game-select
- * - Returning user (onboardingComplete: true): go straight to /profiles
+ * - Returning user (onboardingComplete: true): go straight to /mods
  */
 export function resolveStartupRoute(settings: AppSettings): string {
   if (settings.onboardingComplete) {
-    return '/profiles';
+    return '/mods';
   }
   return '/game-select';
 }
