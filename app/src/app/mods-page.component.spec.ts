@@ -501,7 +501,9 @@ describe('ModsPageComponent', () => {
     component.toggleCategoryFilter('gameplay', true);
 
     expect(component.filteredOnlineCatalogItems.map((item) => item.name)).toContain('Mud Master');
-    expect(component.filteredOnlineCatalogItems.map((item) => item.name)).not.toContain('Visual Pack');
+    expect(component.filteredOnlineCatalogItems.map((item) => item.name)).not.toContain(
+      'Visual Pack',
+    );
   });
 
   it('filters installed mods by category from linked catalog item', () => {

@@ -107,13 +107,17 @@ function normalizeCatalogUrl(url: string): string {
               <span class="badge badge-sm ml-1">{{ selectedCategoryFilters.length }}</span>
             }
           </summary>
-          <div class="dropdown-content z-20 mt-2 w-72 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg">
+          <div
+            class="dropdown-content z-20 mt-2 w-72 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg"
+          >
             @if (availableCategoryFilters.length === 0) {
               <p class="m-0 text-xs text-base-content/60">No categories on this tab yet.</p>
             } @else {
               <div class="max-h-60 overflow-y-auto pr-1">
                 @for (option of availableCategoryFilters; track option.key) {
-                  <label class="flex items-center justify-between gap-2 py-1 text-sm cursor-pointer">
+                  <label
+                    class="flex items-center justify-between gap-2 py-1 text-sm cursor-pointer"
+                  >
                     <span class="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -233,9 +237,12 @@ function normalizeCatalogUrl(url: string): string {
                           selectedCategoryFilters.length > 0 && isCategoryFilterSelected(pill.key)
                         "
                         [class.badge-outline]="
-                          selectedCategoryFilters.length === 0 || !isCategoryFilterSelected(pill.key)
+                          selectedCategoryFilters.length === 0 ||
+                          !isCategoryFilterSelected(pill.key)
                         "
-                        (click)="toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))"
+                        (click)="
+                          toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))
+                        "
                       >
                         {{ pill.label }}
                       </span>
@@ -343,13 +350,16 @@ function normalizeCatalogUrl(url: string): string {
                           <span
                             class="badge badge-sm px-2 py-2 cursor-pointer"
                             [class.badge-primary]="
-                              selectedCategoryFilters.length > 0 && isCategoryFilterSelected(pill.key)
+                              selectedCategoryFilters.length > 0 &&
+                              isCategoryFilterSelected(pill.key)
                             "
                             [class.badge-outline]="
                               selectedCategoryFilters.length === 0 ||
                               !isCategoryFilterSelected(pill.key)
                             "
-                            (click)="toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))"
+                            (click)="
+                              toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))
+                            "
                           >
                             {{ pill.label }}
                           </span>
@@ -443,7 +453,12 @@ function normalizeCatalogUrl(url: string): string {
                                   selectedCategoryFilters.length === 0 ||
                                   !isCategoryFilterSelected(pill.key)
                                 "
-                                (click)="toggleCategoryFilter(pill.key, !isCategoryFilterSelected(pill.key))"
+                                (click)="
+                                  toggleCategoryFilter(
+                                    pill.key,
+                                    !isCategoryFilterSelected(pill.key)
+                                  )
+                                "
                               >
                                 {{ pill.label }}
                               </span>
@@ -630,7 +645,9 @@ export class ModsPageComponent implements OnInit {
   }
 
   get installedTabCount(): number {
-    return this.activeTab === 'installed' ? this.filteredInstalledMods.length : this.installedMods.length;
+    return this.activeTab === 'installed'
+      ? this.filteredInstalledMods.length
+      : this.installedMods.length;
   }
 
   get subscribedTabCount(): number {
@@ -646,11 +663,15 @@ export class ModsPageComponent implements OnInit {
   }
 
   get filteredInstalledMods(): ModEntry[] {
-    return this.installedMods.filter((mod) => this.matchesCategoryFilters(this.categoryKeysForMod(mod)));
+    return this.installedMods.filter((mod) =>
+      this.matchesCategoryFilters(this.categoryKeysForMod(mod)),
+    );
   }
 
   get filteredSubscribedCatalogItems(): OnlineCatalogItem[] {
-    return this.subscribedCatalogItems.filter((item) => this.matchesCategoryFilters(this.categoryKeysForItem(item)));
+    return this.subscribedCatalogItems.filter((item) =>
+      this.matchesCategoryFilters(this.categoryKeysForItem(item)),
+    );
   }
 
   get onlineCatalogItems(): OnlineCatalogItem[] {
@@ -708,7 +729,9 @@ export class ModsPageComponent implements OnInit {
   }
 
   get filteredOnlineCatalogItems(): OnlineCatalogItem[] {
-    return this.onlineCatalogItems.filter((item) => this.matchesCategoryFilters(this.categoryKeysForItem(item)));
+    return this.onlineCatalogItems.filter((item) =>
+      this.matchesCategoryFilters(this.categoryKeysForItem(item)),
+    );
   }
 
   get availableCategoryFilters(): CategoryFilterOption[] {
@@ -780,7 +803,9 @@ export class ModsPageComponent implements OnInit {
       return;
     }
 
-    this.selectedCategoryFilters = this.selectedCategoryFilters.filter((selected) => selected !== key);
+    this.selectedCategoryFilters = this.selectedCategoryFilters.filter(
+      (selected) => selected !== key,
+    );
   }
 
   clearCategoryFilters(): void {
