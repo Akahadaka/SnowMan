@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { APPROVED_MODS, getApprovedMod } from './approved-mods.catalog';
 import { toDownloadedModPath } from './approved-mods.logic';
+import { fetchModioCatalog, type ModioCatalogItem } from './modio-catalog.service';
 import {
   loadProfileSelections,
   saveProfileSelection,
@@ -20,6 +21,11 @@ import {
 } from './settings.persistence';
 
 type ModsTab = 'installed' | 'online';
+
+type GlobalWithModioKey = typeof globalThis & { MODIO_API_KEY?: string };
+
+const MODIO_GAME_ID = 306;
+const MODIO_API_KEY = (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
 
 @Component({
   selector: 'app-mods-page',
@@ -62,10 +68,10 @@ type ModsTab = 'installed' | 'online';
             type="button"
             class="tab"
             [class.tab-active]="activeTab === 'online'"
-            (click)="activeTab = 'online'"
+            (click)="setActiveTab('online')"
           >
             Online
-            <span class="badge badge-sm badge-ghost ml-1">{{ approvedMods.length }}</span>
+            <span class="badge badge-sm badge-ghost ml-1">{{ modioMods.length }}</span>
           </button>
         </div>
 
@@ -107,6 +113,51 @@ type ModsTab = 'installed' | 'online';
         </div>
       } @else {
         <div class="flex-1 overflow-y-auto">
+          <div class="px-6 pt-4 pb-2">
+            <h3 class="text-sm font-semibold text-base-content/80 m-0 mb-2">mod.io catalog</h3>
+
+            @if (modioLoading) {
+              <p class="text-xs text-base-content/60 m-0">Loading mod.io results…</p>
+            } @else if (modioError) {
+              <p class="text-xs text-warning m-0">{{ modioError }}</p>
+            } @else if (modioMods.length === 0) {
+              <p class="text-xs text-base-content/60 m-0">No mod.io results for this query.</p>
+            } @else {
+              <div class="grid gap-2">
+                @for (item of modioMods; track item.id) {
+                  <div class="border border-base-300 rounded-box p-3">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="font-semibold m-0">{{ item.name }}</p>
+                        <p class="text-xs text-base-content/60 m-0 mt-0.5 line-clamp-2">
+                          {{ item.summary }}
+                        </p>
+                        @if (item.tags.length > 0) {
+                          <p class="text-xs text-base-content/50 m-0 mt-1">
+                            {{ item.tags.slice(0, 4).join(' • ') }}
+                          </p>
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-xs"
+                        (click)="openModProfile(item.profileUrl)"
+                      >
+                        Open
+                      </button>
+                    </div>
+                    <p class="text-[11px] text-base-content/40 m-0 mt-1">
+                      Downloads: {{ item.downloadsTotal }} • Subscribers:
+                      {{ item.subscribersTotal }}
+                    </p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="divider my-0">Curated managed installs</div>
+
           @for (approved of approvedMods; track approved.id) {
             <div class="border-b border-base-300">
               <div
@@ -179,6 +230,9 @@ export class ModsPageComponent {
   expandedModId: string | null = null;
   statusMessage = '';
   searchQuery = '';
+  modioMods: ModioCatalogItem[] = [];
+  modioLoading = false;
+  modioError = '';
   profiles: Profile[] = [];
   approvedMods: ApprovedModDefinition[] = [...APPROVED_MODS];
   profileSelectionsByProfileId: Record<string, Record<string, Record<string, boolean>>> = {};
@@ -232,6 +286,13 @@ export class ModsPageComponent {
 
   toggleExpand(id: string): void {
     this.expandedModId = this.expandedModId === id ? null : id;
+  }
+
+  setActiveTab(tab: ModsTab): void {
+    this.activeTab = tab;
+    if (tab === 'online' && this.modioMods.length === 0 && !this.modioLoading) {
+      void this.loadModioCatalog();
+    }
   }
 
   isOptionSelected(mod: ModEntry, option: ApprovedModOption): boolean {
@@ -363,8 +424,44 @@ export class ModsPageComponent {
   async onSearchChange(): Promise<void> {
     try {
       this.approvedMods = await searchCatalog(this.searchQuery, 200);
+      if (this.activeTab === 'online') {
+        await this.loadModioCatalog();
+      }
     } catch {
       // Keep existing list when DB search is unavailable.
+    }
+  }
+
+  async loadModioCatalog(): Promise<void> {
+    this.modioLoading = true;
+    this.modioError = '';
+
+    try {
+      this.modioMods = await fetchModioCatalog({
+        gameId: MODIO_GAME_ID,
+        apiKey: MODIO_API_KEY,
+        query: this.searchQuery,
+      });
+
+      if (!MODIO_API_KEY.trim()) {
+        this.modioError = 'mod.io API key is not configured for this build.';
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch mod.io results.';
+      this.modioError = message;
+      this.modioMods = [];
+    } finally {
+      this.modioLoading = false;
+    }
+  }
+
+  openModProfile(profileUrl: string): void {
+    if (!profileUrl) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.open(profileUrl, '_blank', 'noopener,noreferrer');
     }
   }
 
