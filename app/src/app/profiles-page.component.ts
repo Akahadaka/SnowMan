@@ -1,285 +1,159 @@
-import { Component } from "@angular/core";
-import { FormsModule } from "@angular/forms";
-import { buildCandidatesForApprovedMod } from "./approved-mods.logic";
-import { executeControlledDeploy } from "./deploy-execution";
-import { launchWithManagedDeploy } from "./launcher.bridge";
-import { getModsForProfile } from "./mod.import";
-import { getProfiles } from "./profiles.persistence";
-import type { Profile } from "./profile.types";
-import {
-  createNamedProfile,
-  deriveLaunchContext,
-  selectActiveProfile,
-} from "./profiles-page.logic";
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { getProfiles, updateProfile } from './profiles.persistence';
+import type { Profile } from './profile.types';
+import { createNamedProfile, selectActiveProfile } from './profiles-page.logic';
 import {
   loadSettings,
-  mergeSettings,
   saveSettings,
   type AppSettings,
   type StorageLike,
-} from "./settings.persistence";
-import {
-  ACTIVE_GAME_ID,
-  ACTIVE_STORE_ID,
-  GAME_OPTIONS,
-  STORE_OPTIONS,
-  type GameOption,
-  type StoreOption,
-} from "./game-context";
+} from './settings.persistence';
+import { STORE_OPTIONS, GAME_OPTIONS } from './game-context';
 
 @Component({
-  selector: "app-profiles-page",
+  selector: 'app-profiles-page',
   standalone: true,
   imports: [FormsModule],
   template: `
-    <section class="page">
-      <p class="eyebrow">Profiles</p>
-      <h2>Profile Management</h2>
+    <div class="flex flex-col h-full">
+      <header class="bg-primary text-primary-content px-8 py-7">
+        <h1 class="text-3xl font-bold mb-1 mt-0">Profile selection</h1>
+        <p class="m-0 text-sm opacity-90">Profiles help to organise mods easily</p>
+      </header>
 
-      <div class="context-panel" aria-label="Active game context">
-        <h3>Active Context</h3>
-        <p>Select Store then Game before editing profiles.</p>
-        <div class="context-grid">
-          <label for="profilesStoreId">Store</label>
-          <select
-            id="profilesStoreId"
-            name="profilesStoreId"
-            [ngModel]="settings.selectedStoreId"
-            disabled
-          >
-            @for (option of storeOptions; track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          </select>
-
-          <label for="profilesGameId">Game</label>
-          <select
-            id="profilesGameId"
-            name="profilesGameId"
-            [ngModel]="settings.selectedGameId"
-            disabled
-          >
-            @for (option of gameOptions; track option.id) {
-              <option [value]="option.id">{{ option.label }}</option>
-            }
-          </select>
-        </div>
+      <div class="flex items-center gap-4 px-8 py-2 bg-base-200 border-b border-base-300">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="backToGameSelect()">
+          ← Back to game selection
+        </button>
+        <span class="text-sm text-base-content/60">{{ gameLabel }} · {{ storeLabel }}</span>
       </div>
 
-      <div class="actions-panel">
-        <label for="profileName">New Profile Name</label>
-        <div class="create-row">
+      <div class="flex flex-col gap-3 p-8 overflow-auto">
+        @if (profiles.length === 0) {
+          <p class="text-base-content/60 text-sm">
+            No profiles yet. Create one below to get started.
+          </p>
+        }
+
+        @for (profile of profiles; track profile.id) {
+          <div
+            class="card card-compact bg-base-100 border max-w-3xl"
+            [class.border-primary]="profile.id === activeProfileId"
+            [class.border-base-300]="profile.id !== activeProfileId"
+          >
+            <div class="card-body flex-row items-center gap-3">
+              @if (editingProfileId === profile.id) {
+                <input
+                  class="input input-bordered input-sm flex-1"
+                  type="text"
+                  [(ngModel)]="editingProfileName"
+                  (keydown.enter)="saveEdit()"
+                  (keydown.escape)="cancelEdit()"
+                />
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit()">
+                    Save
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEdit()">
+                    Cancel
+                  </button>
+                </div>
+              } @else {
+                <span class="font-semibold flex-1 text-base-content">
+                  {{ profile.name }}
+                  @if (profile.id === activeProfileId) {
+                    <span class="badge badge-primary badge-outline badge-sm px-2 ml-2">Active</span>
+                  }
+                </span>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    (click)="openProfile(profile.id)"
+                  >
+                    Open
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(profile)">
+                    Rename
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="join max-w-3xl mt-2">
           <input
             id="profileName"
             name="profileName"
             type="text"
+            class="input input-bordered join-item flex-1"
             [(ngModel)]="newProfileName"
-            placeholder="e.g. Vanilla Safe"
+            placeholder="New profile name…"
           />
-          <button type="button" (click)="createProfile()">Create Profile</button>
+          <button type="button" class="btn btn-primary join-item" (click)="createProfile()">
+            Create new
+          </button>
         </div>
-        <p class="status">{{ statusMessage }}</p>
+        @if (statusMessage) {
+          <p class="text-sm text-base-content/60 mt-1">{{ statusMessage }}</p>
+        }
       </div>
-
-      <p class="summary">Profiles in active context: {{ profiles.length }}</p>
-
-      @if (profiles.length > 0) {
-        <ul class="profiles-list">
-          @for (profile of profiles; track profile.id) {
-            <li>
-              <label class="profile-row">
-                <input
-                  type="radio"
-                  name="activeProfile"
-                  [checked]="profile.id === activeProfileId"
-                  (change)="setActiveProfile(profile.id)"
-                />
-                <span>{{ profile.name }}</span>
-              </label>
-            </li>
-          }
-        </ul>
-      }
-
-      <div class="launch-row">
-        <button type="button" (click)="launchFromActiveProfile()">
-          Launch From Active Profile
-        </button>
-      </div>
-    </section>
-  `,
-  styles: `
-    .context-panel {
-      margin-top: 14px;
-      margin-bottom: 12px;
-      padding: 14px;
-      border: 1px solid rgba(16, 33, 43, 0.16);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.72);
-      max-width: 760px;
-    }
-
-    .context-panel h3 {
-      margin: 0 0 4px;
-      font-size: 1rem;
-      color: #1a2f38;
-    }
-
-    .context-panel p {
-      margin: 0 0 10px;
-      color: #4e6771;
-      font-size: 0.9rem;
-    }
-
-    .context-grid {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 8px 10px;
-      align-items: center;
-      max-width: 560px;
-    }
-
-    label {
-      font-weight: 600;
-      color: #314952;
-    }
-
-    select {
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
-      background: rgba(255, 255, 255, 0.9);
-      width: 100%;
-      color: #49616b;
-      cursor: not-allowed;
-    }
-
-    .actions-panel {
-      margin-top: 12px;
-      max-width: 760px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .create-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
-      background: rgba(255, 255, 255, 0.9);
-      width: 100%;
-    }
-
-    button {
-      border: 1px solid rgba(16, 33, 43, 0.2);
-      border-radius: 10px;
-      padding: 0 12px;
-      font-weight: 600;
-      background: #1a2f38;
-      color: #eff8fb;
-      cursor: pointer;
-    }
-
-    .summary {
-      margin-top: 10px;
-      font-weight: 600;
-      color: #314952;
-    }
-
-    .status {
-      margin: 0;
-      color: #4e6771;
-      font-size: 0.9rem;
-      min-height: 20px;
-    }
-
-    .profiles-list {
-      list-style: none;
-      padding: 0;
-      margin: 8px 0;
-      max-width: 760px;
-      display: grid;
-      gap: 6px;
-    }
-
-    .profile-row {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-      color: #314952;
-    }
-
-    .launch-row {
-      margin-top: 10px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .context-panel {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.52);
-      }
-
-      .profile-row,
-      .context-panel h3,
-      .context-panel p,
-      .summary,
-      .status,
-      label {
-        color: #d3e7ee;
-      }
-
-      select {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(7, 17, 22, 0.72);
-        color: #b8ced6;
-      }
-
-      input[type="text"] {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(8, 19, 24, 0.76);
-        color: #eff8fb;
-      }
-
-      button {
-        border: 1px solid rgba(239, 248, 251, 0.2);
-        background: rgba(11, 33, 44, 0.92);
-        color: #eff8fb;
-      }
-    }
+    </div>
   `,
 })
 export class ProfilesPageComponent {
-  readonly storeOptions: ReadonlyArray<StoreOption> = STORE_OPTIONS;
-  readonly gameOptions: ReadonlyArray<GameOption> = GAME_OPTIONS;
-
   settings: AppSettings;
   profiles: Profile[] = [];
   activeProfileId: string | null = null;
-  newProfileName = "";
-  statusMessage = "";
+  newProfileName = '';
+  statusMessage = '';
+  editingProfileId: string | null = null;
+  editingProfileName = '';
+
+  get gameLabel(): string {
+    return (
+      GAME_OPTIONS.find((g) => g.id === this.settings.selectedGameId)?.label ??
+      this.settings.selectedGameId
+    );
+  }
+
+  get storeLabel(): string {
+    return (
+      STORE_OPTIONS.find((s) => s.id === this.settings.selectedStoreId)?.label ??
+      this.settings.selectedStoreId
+    );
+  }
+
+  get activeProfileName(): string {
+    return this.profiles.find((profile) => profile.id === this.activeProfileId)?.name ?? '';
+  }
 
   private readonly storage: StorageLike;
 
-  constructor() {
+  constructor(private readonly router: Router) {
     this.storage = this.resolveStorage();
-    const loaded = loadSettings(this.storage);
-    this.settings = mergeSettings(
-      {
-        selectedStoreId: ACTIVE_STORE_ID,
-        selectedGameId: ACTIVE_GAME_ID,
-      },
-      loaded,
-    );
-    saveSettings(this.storage, this.settings);
-
+    this.settings = loadSettings(this.storage);
     this.refreshProfiles();
+  }
+
+  backToGameSelect(): void {
+    void this.router.navigate(['/game-select']);
+  }
+
+  openProfile(profileId: string): void {
+    if (!profileId) {
+      this.statusMessage = 'Select a profile first.';
+      return;
+    }
+
+    if (profileId !== this.activeProfileId) {
+      this.setActiveProfile(profileId, false);
+    }
+
+    void this.router.navigate(['/mods']);
   }
 
   createProfile(): void {
@@ -291,18 +165,48 @@ export class ProfilesPageComponent {
     );
 
     if (!result.created || !result.profile) {
-      this.statusMessage = "Enter a non-empty profile name.";
+      this.statusMessage = 'Enter a non-empty profile name.';
       return;
     }
 
     this.settings = result.settings;
     saveSettings(this.storage, this.settings);
-    this.newProfileName = "";
+    this.newProfileName = '';
     this.statusMessage = `Created profile '${result.profile.name}'.`;
     this.refreshProfiles();
   }
 
-  setActiveProfile(profileId: string): void {
+  startEdit(profile: Profile): void {
+    this.editingProfileId = profile.id;
+    this.editingProfileName = profile.name;
+  }
+
+  saveEdit(): void {
+    const id = this.editingProfileId;
+    const name = this.editingProfileName.trim();
+    if (!id || !name) {
+      this.cancelEdit();
+      return;
+    }
+    this.settings = updateProfile(
+      this.settings,
+      this.settings.selectedStoreId,
+      this.settings.selectedGameId,
+      id,
+      { name },
+    );
+    saveSettings(this.storage, this.settings);
+    this.editingProfileId = null;
+    this.editingProfileName = '';
+    this.refreshProfiles();
+  }
+
+  cancelEdit(): void {
+    this.editingProfileId = null;
+    this.editingProfileName = '';
+  }
+
+  setActiveProfile(profileId: string, updateMessage = true): void {
     this.settings = selectActiveProfile(
       this.settings,
       this.settings.selectedStoreId,
@@ -310,55 +214,10 @@ export class ProfilesPageComponent {
       profileId,
     );
     saveSettings(this.storage, this.settings);
-    this.statusMessage = "Active profile updated.";
+    if (updateMessage) {
+      this.statusMessage = 'Active profile updated.';
+    }
     this.refreshProfiles();
-  }
-
-  async launchFromActiveProfile(): Promise<void> {
-    const launchContext = deriveLaunchContext(
-      this.settings,
-      this.settings.selectedStoreId,
-      this.settings.selectedGameId,
-    );
-
-    if (!launchContext.canLaunch || !launchContext.executablePath) {
-      this.statusMessage = launchContext.reason ?? "Launch blocked by profile context.";
-      return;
-    }
-
-    const installPath =
-      this.settings.stores[this.settings.selectedStoreId]?.games[this.settings.selectedGameId]
-        ?.installPath ?? "";
-
-    const profileId = launchContext.activeProfileId;
-    const mods = profileId
-      ? Object.values(
-          getModsForProfile(
-            this.settings,
-            this.settings.selectedStoreId,
-            this.settings.selectedGameId,
-            profileId,
-          ),
-        )
-      : [];
-
-    const candidates = mods.flatMap((mod) => buildCandidatesForApprovedMod(mod));
-    const deployResult = executeControlledDeploy(candidates, new Date().toISOString());
-
-    if (deployResult.status === "blocked") {
-      this.statusMessage = "Launch blocked: mod deploy preflight failed.";
-      return;
-    }
-
-    const launched = await launchWithManagedDeploy(
-      launchContext.executablePath,
-      installPath,
-      deployResult.plannedBackups,
-      deployResult.plannedCopies,
-    );
-    this.statusMessage = launched
-      ? "Game launched. Mods deployed; backups will be restored when the game exits."
-      : "Failed to launch game executable.";
   }
 
   private refreshProfiles(): void {
@@ -373,7 +232,7 @@ export class ProfilesPageComponent {
   }
 
   private resolveStorage(): StorageLike {
-    if (typeof localStorage !== "undefined") {
+    if (typeof localStorage !== 'undefined') {
       return localStorage;
     }
 

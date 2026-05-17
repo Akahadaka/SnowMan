@@ -1,10 +1,10 @@
-import { tauriInvoke } from "./tauri.bridge";
-import type { BackupRecord } from "./deploy-execution.types";
-import type { PlannedCopyOperation } from "./safety-dry-run.types";
+import { tauriInvoke } from './tauri.bridge';
+import type { BackupRecord } from './deploy-execution.types';
+import type { PlannedCopyOperation } from './safety-dry-run.types';
 
 export async function launchExecutable(executablePath: string): Promise<boolean> {
   try {
-    await tauriInvoke("launch_game", { executablePath });
+    await tauriInvoke('launch_game', { executablePath });
     return true;
   } catch {
     return false;
@@ -18,7 +18,7 @@ export async function launchWithManagedDeploy(
   copies: PlannedCopyOperation[],
 ): Promise<boolean> {
   try {
-    await tauriInvoke("deploy_launch_restore", {
+    await tauriInvoke('deploy_launch_restore', {
       executablePath,
       installRootPath,
       backups: backups.map((entry) => ({

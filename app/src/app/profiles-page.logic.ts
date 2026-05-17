@@ -1,7 +1,7 @@
-import type { GameId, StoreId } from "./game-discovery.types";
-import type { Profile } from "./profile.types";
-import { createProfile, getProfiles, setActiveProfile } from "./profiles.persistence";
-import { getInstallPathForStore, type AppSettings } from "./settings.persistence";
+import type { GameId, StoreId } from './game-discovery.types';
+import type { Profile } from './profile.types';
+import { createProfile, getProfiles, setActiveProfile } from './profiles.persistence';
+import { getInstallPathForStore, type AppSettings } from './settings.persistence';
 
 export interface CreateNamedProfileResult {
   settings: AppSettings;
@@ -17,7 +17,7 @@ export interface LaunchContext {
 }
 
 function normalizeInstallPath(path: string): string {
-  return path.replace(/\\/g, "/").replace(/\/$/, "");
+  return path.replace(/\\/g, '/').replace(/\/$/, '');
 }
 
 function deriveSnowRunnerExecutablePath(installPath: string): string {
@@ -69,7 +69,7 @@ export function deriveLaunchContext(
   if (!activeProfileId) {
     return {
       canLaunch: false,
-      reason: "Select an active profile before launching.",
+      reason: 'Select an active profile before launching.',
     };
   }
 
@@ -77,7 +77,7 @@ export function deriveLaunchContext(
   if (!installPath) {
     return {
       canLaunch: false,
-      reason: "Set the game install path in Settings before launching.",
+      reason: 'Set the game install path in Settings before launching.',
       activeProfileId,
     };
   }

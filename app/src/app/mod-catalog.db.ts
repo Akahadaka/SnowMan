@@ -1,5 +1,5 @@
-import { tauriInvoke, type CatalogDbEntryInput } from "./tauri.bridge";
-import type { ApprovedModDefinition } from "./mod.types";
+import { tauriInvoke, type CatalogDbEntryInput } from './tauri.bridge';
+import type { ApprovedModDefinition } from './mod.types';
 
 function toCatalogInput(mod: ApprovedModDefinition): CatalogDbEntryInput {
   return {
@@ -31,8 +31,8 @@ function parseCatalogRow(row: {
       downloadUrl: row.downloadUrl,
       baseInstallSteps: JSON.parse(
         row.baseInstallStepsJson,
-      ) as ApprovedModDefinition["baseInstallSteps"],
-      options: JSON.parse(row.optionsJson) as ApprovedModDefinition["options"],
+      ) as ApprovedModDefinition['baseInstallSteps'],
+      options: JSON.parse(row.optionsJson) as ApprovedModDefinition['options'],
     };
   } catch {
     return null;
@@ -42,13 +42,13 @@ function parseCatalogRow(row: {
 export async function syncCatalog(
   definitions: ReadonlyArray<ApprovedModDefinition>,
 ): Promise<void> {
-  await tauriInvoke("sync_mod_catalog", {
+  await tauriInvoke('sync_mod_catalog', {
     entries: definitions.map((definition) => toCatalogInput(definition)),
   });
 }
 
 export async function searchCatalog(query: string, limit = 200): Promise<ApprovedModDefinition[]> {
-  const rows = await tauriInvoke("search_mod_catalog", { query, limit });
+  const rows = await tauriInvoke('search_mod_catalog', { query, limit });
   return rows
     .map((row) => parseCatalogRow(row))
     .filter((row): row is ApprovedModDefinition => Boolean(row));
@@ -59,7 +59,7 @@ export async function saveProfileSelection(
   modId: string,
   selectedOptions: Record<string, boolean>,
 ): Promise<void> {
-  await tauriInvoke("upsert_profile_mod_selection", {
+  await tauriInvoke('upsert_profile_mod_selection', {
     profileId,
     modId,
     selectedOptionsJson: JSON.stringify(selectedOptions),
@@ -69,7 +69,7 @@ export async function saveProfileSelection(
 export async function loadProfileSelections(
   profileId: string,
 ): Promise<Record<string, Record<string, boolean>>> {
-  const rows = await tauriInvoke("get_profile_mod_selections", { profileId });
+  const rows = await tauriInvoke('get_profile_mod_selections', { profileId });
   const map: Record<string, Record<string, boolean>> = {};
 
   for (const row of rows) {

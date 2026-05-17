@@ -3,8 +3,8 @@ import {
   STEAM_STORE_ID,
   type GameId,
   type StoreId,
-} from "./game-discovery.types";
-import type { ProfilesMap } from "./profile.types";
+} from './game-discovery.types';
+import type { ProfilesMap } from './profile.types';
 
 export interface StoreGameSettings {
   installPath: string;
@@ -25,6 +25,7 @@ export interface AppSettings {
   selectedGameId: GameId;
   selectedStoreId: StoreId;
   autoBackupOnDeploy: boolean;
+  onboardingComplete: boolean;
   stores: StoresSettingsMap;
 }
 
@@ -32,17 +33,19 @@ export interface SettingsPatch {
   selectedGameId?: GameId;
   selectedStoreId?: StoreId;
   autoBackupOnDeploy?: boolean;
+  onboardingComplete?: boolean;
   stores?: Partial<
     Record<StoreId, { games?: Partial<Record<GameId, Partial<StoreGameSettings>>> }>
   >;
 }
 
-export const SETTINGS_STORAGE_KEY = "snowman.settings.v1";
+export const SETTINGS_STORAGE_KEY = 'snowman.settings.v1';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   selectedGameId: SNOWRUNNER_GAME_ID,
   selectedStoreId: STEAM_STORE_ID,
   autoBackupOnDeploy: true,
+  onboardingComplete: false,
   stores: {},
 };
 
@@ -56,7 +59,7 @@ export function getInstallPathForStore(
   storeId: StoreId,
   gameId: GameId,
 ): string {
-  return settings.stores[storeId]?.games[gameId]?.installPath ?? "";
+  return settings.stores[storeId]?.games[gameId]?.installPath ?? '';
 }
 
 export function setInstallPathForStore(
@@ -98,8 +101,8 @@ export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSetti
           if (!gamePatch) return;
 
           mergedGames[gameId] = {
-            installPath: "",
-            profileRootPath: "",
+            installPath: '',
+            profileRootPath: '',
             ...baseStore.games[gameId],
             ...gamePatch,
           };
@@ -114,15 +117,16 @@ export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSetti
     selectedGameId: patch.selectedGameId ?? base.selectedGameId,
     selectedStoreId: patch.selectedStoreId ?? base.selectedStoreId,
     autoBackupOnDeploy: patch.autoBackupOnDeploy ?? base.autoBackupOnDeploy,
+    onboardingComplete: patch.onboardingComplete ?? base.onboardingComplete,
     stores: mergedStores,
   };
 }
 
 function migrateLegacyShape(parsed: Record<string, unknown>): SettingsPatch {
   const legacyInstallPath =
-    typeof parsed["gameInstallPath"] === "string" ? parsed["gameInstallPath"] : undefined;
+    typeof parsed['gameInstallPath'] === 'string' ? parsed['gameInstallPath'] : undefined;
   const legacyAutoBackup =
-    typeof parsed["autoBackupOnDeploy"] === "boolean" ? parsed["autoBackupOnDeploy"] : undefined;
+    typeof parsed['autoBackupOnDeploy'] === 'boolean' ? parsed['autoBackupOnDeploy'] : undefined;
 
   if (!legacyInstallPath && legacyAutoBackup === undefined) {
     return {};
@@ -134,7 +138,7 @@ function migrateLegacyShape(parsed: Record<string, unknown>): SettingsPatch {
       steam: {
         games: {
           snowrunner: {
-            installPath: legacyInstallPath ?? "",
+            installPath: legacyInstallPath ?? '',
           },
         },
       },

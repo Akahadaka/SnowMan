@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { InstallStrategy } from "./mod.types";
+import { invoke } from '@tauri-apps/api/core';
+import type { InstallStrategy } from './mod.types';
 
 /**
  * Maps every Tauri command name to its return type.
@@ -84,14 +84,14 @@ export type TauriInvokeFn = <C extends CommandName>(
 
 /** All registered command names, available at runtime for validation. */
 export const registeredCommands: ReadonlyArray<CommandName> = [
-  "ping",
-  "launch_game",
-  "download_and_extract_zip",
-  "deploy_launch_restore",
-  "sync_mod_catalog",
-  "search_mod_catalog",
-  "upsert_profile_mod_selection",
-  "get_profile_mod_selections",
+  'ping',
+  'launch_game',
+  'download_and_extract_zip',
+  'deploy_launch_restore',
+  'sync_mod_catalog',
+  'search_mod_catalog',
+  'upsert_profile_mod_selection',
+  'get_profile_mod_selections',
 ] as const;
 
 /**

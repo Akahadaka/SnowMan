@@ -3,7 +3,7 @@ import {
   mergeSettings,
   setInstallPathForStore,
   type AppSettings,
-} from "./settings.persistence";
+} from './settings.persistence';
 
 export interface SettingsFormValues {
   gameInstallPath: string;

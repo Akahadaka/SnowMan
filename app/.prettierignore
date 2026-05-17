@@ -1,4 +1,3 @@
 dist
 .angular
 node_modules
-*.mjs

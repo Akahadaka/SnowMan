@@ -1,7 +1,7 @@
-import { Component } from "@angular/core";
+import { Component } from '@angular/core';
 
 @Component({
-  selector: "app-dashboard-page",
+  selector: 'app-dashboard-page',
   standalone: true,
   template: `
     <section class="page">

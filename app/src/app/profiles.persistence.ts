@@ -1,6 +1,6 @@
-import type { GameId, StoreId } from "./game-discovery.types";
-import type { Profile, ProfilesMap } from "./profile.types";
-import { mergeSettings, type AppSettings } from "./settings.persistence";
+import type { GameId, StoreId } from './game-discovery.types';
+import type { Profile, ProfilesMap } from './profile.types';
+import { mergeSettings, type AppSettings } from './settings.persistence';
 
 function now(): string {
   return new Date().toISOString();
@@ -60,7 +60,7 @@ export function updateProfile(
   storeId: StoreId,
   gameId: GameId,
   profileId: string,
-  patch: Partial<Pick<Profile, "name" | "description">>,
+  patch: Partial<Pick<Profile, 'name' | 'description'>>,
 ): AppSettings {
   const existing = getProfilesMap(settings, storeId, gameId);
   const profile = existing[profileId];

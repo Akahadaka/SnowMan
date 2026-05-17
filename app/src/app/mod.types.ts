@@ -8,7 +8,7 @@ export interface ModEntry {
   selectedOptions?: Record<string, boolean>;
 }
 
-export type InstallStrategy = "direct-copy" | "archive-overlay";
+export type InstallStrategy = 'direct-copy' | 'archive-overlay';
 
 export type ModsMap = Record<string, ModEntry>;
 
@@ -19,7 +19,7 @@ export interface ModManifest {
 }
 
 export interface ModImportError {
-  code: "empty-path" | "manifest-parse-failure";
+  code: 'empty-path' | 'manifest-parse-failure';
   message: string;
 }
 

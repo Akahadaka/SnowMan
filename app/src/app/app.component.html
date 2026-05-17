@@ -1,38 +1,87 @@
-<main class="shell">
-  <aside class="sidebar">
-    <div class="brand-block">
-      <p class="eyebrow">SnowRunner Mod Manager</p>
-      <h1>{{ title }}</h1>
-      <p class="brand-copy">A safe desktop workspace for profiles, mods, and diagnostics.</p>
+<main
+  class="grid h-dvh grid-cols-[280px_minmax(0,1fr)] overflow-hidden bg-base-100 text-base-content max-[900px]:grid-cols-1 max-[900px]:grid-rows-[auto_minmax(0,1fr)]"
+>
+  <aside
+    class="flex h-full flex-col gap-6 overflow-hidden bg-base-300 px-5 py-6 text-base-content max-[900px]:sticky max-[900px]:top-0 max-[900px]:z-20 max-[900px]:h-auto max-[900px]:gap-3 max-[900px]:px-4 max-[900px]:py-3 max-[900px]:shadow-md"
+    data-theme="dark"
+  >
+    <div
+      class="grid gap-4 max-[900px]:flex max-[900px]:flex-wrap max-[900px]:items-start max-[900px]:justify-between max-[900px]:gap-3"
+    >
+      <div
+        class="grid min-w-0 flex-1 gap-1 max-[900px]:basis-[18rem] max-[900px]:min-w-[16rem] max-[900px]:flex-[2_1_18rem]"
+      >
+        <p
+          class="m-0 text-xs font-bold uppercase tracking-widest text-primary max-[600px]:text-[0.7rem]"
+        >
+          SnowRunner Mod Manager
+        </p>
+        <h1 class="m-0 text-3xl font-bold leading-tight max-[900px]:text-2xl max-[600px]:text-xl">
+          @if (hasActiveProfile) {
+            <span class="inline min-[901px]:block">{{ title }}:</span>
+            <span class="ml-1 inline min-[901px]:ml-0 min-[901px]:block">{{
+              activeProfileName
+            }}</span>
+          } @else {
+            {{ title }}
+          }
+        </h1>
+      </div>
+
+      @if (hasActiveProfile) {
+        <div
+          class="card card-compact w-full max-w-xs bg-base-200 max-[900px]:ml-auto max-[900px]:w-auto max-[900px]:max-w-[34rem] max-[900px]:min-w-[20rem] max-[900px]:flex-[1_1_26rem] max-[600px]:w-full max-[600px]:max-w-full max-[600px]:min-w-0"
+          aria-label="Selected profile actions"
+        >
+          <div class="card-body gap-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-primary"
+              >Active profile</span
+            >
+            <p class="text-sm opacity-75 m-0">{{ activeProfileSummary }}</p>
+            @if (shellStatusMessage) {
+              <p class="text-xs text-warning m-0">{{ shellStatusMessage }}</p>
+            }
+            <div
+              class="card-actions pt-1 flex-wrap gap-2 min-[901px]:flex-col min-[901px]:flex-nowrap max-[600px]:flex-col max-[600px]:flex-nowrap"
+            >
+              <button
+                type="button"
+                class="btn btn-primary btn-sm flex-1 whitespace-nowrap px-6 min-[901px]:w-full min-[901px]:flex-none max-[600px]:w-full max-[600px]:flex-none"
+                (click)="launchModded()"
+              >
+                ▶ Start modded
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm flex-1 whitespace-nowrap px-6 min-[901px]:w-full min-[901px]:flex-none max-[600px]:w-full max-[600px]:flex-none"
+                (click)="launchVanilla()"
+              >
+                ▶ Start vanilla
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
 
-    <nav class="nav" aria-label="Primary">
+    <ul
+      class="menu menu-sm mt-auto gap-0.5 max-[900px]:-mt-2 max-[900px]:flex-row max-[900px]:flex-wrap"
+      aria-label="Primary"
+    >
       @for (item of navigationItems; track item.path) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="nav-link"
-        >
-          {{ item.label }}
-        </a>
+        <li>
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            >{{ item.label }}</a
+          >
+        </li>
       }
-    </nav>
+    </ul>
   </aside>
 
-  <section class="content">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Iteration 01</p>
-        <h2>App Shell</h2>
-      </div>
-
-      <div class="ping-box">
-        <button type="button" (click)="ping()">Ping backend</button>
-        <p>{{ greetingMessage || "Waiting for backend check" }}</p>
-      </div>
-    </header>
-
+  <section class="min-h-0 min-w-0 overflow-auto p-6 max-[900px]:p-4">
     <router-outlet />
   </section>
 </main>

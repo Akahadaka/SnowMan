@@ -1,5 +1,5 @@
-import type { AppSettings } from "./settings.persistence";
-import type { DiscoveryCandidate, GameId } from "./game-discovery.types";
+import type { AppSettings } from './settings.persistence';
+import type { DiscoveryCandidate, GameId } from './game-discovery.types';
 
 export interface PathValidationResult {
   isValid: boolean;

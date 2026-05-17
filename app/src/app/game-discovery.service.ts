@@ -1,7 +1,7 @@
-import type { DiscoveryResult, GameId } from "./game-discovery.types";
-import { createGameRegistry, getProviderForGame } from "./game-registry";
-import type { GameRegistry } from "./game-provider";
-import type { AppSettings } from "./settings.persistence";
+import type { DiscoveryResult, GameId } from './game-discovery.types';
+import { createGameRegistry, getProviderForGame } from './game-registry';
+import type { GameRegistry } from './game-provider';
+import type { AppSettings } from './settings.persistence';
 
 export function discoverGameInstallPath(
   gameId: GameId,
@@ -24,7 +24,7 @@ export function discoverGameInstallPath(
 
   return {
     gameId,
-    status: validCandidates.length > 0 ? "found" : "not-found",
+    status: validCandidates.length > 0 ? 'found' : 'not-found',
     validCandidates,
     candidates: validatedCandidates,
   };

@@ -14,6 +14,7 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 - Iteration 07 branch: feature/07-controlled-deploy-launch-restore
 - Iteration 08 branch: feature/07-controlled-deploy-launch-restore (spec-08-profile-create-and-launch-flow, merged with PR #8)
 - Iteration 09 branch: feature/09-local-mod-import-metadata
+- Iteration 10 branch: feature/10-guided-onboarding-flow
 
 ## Decision Log
 - Use `npm` as frontend package manager for V1 baseline.
@@ -26,6 +27,7 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 - Safety dry-run should be pure and deterministic: report risks before deploy, no file I/O in Iteration 06.
 - Controlled deploy/launch/restore should compose dry-run results and remain pure until file I/O lands.
 - Local mod import keeps file-system walking injectable (pure unit tests) — existsChecker and file list are injected, not real I/O.
+- Iteration 10 (guided onboarding): store/game selection done via wizard (game-select → store-select → discovery-loading → profiles). `onboardingComplete` flag in AppSettings gates startup routing. Settings page simplified to show read-only game/store context + "Change game / store" link. Mods page redesigned with Installed/Online tabs + Update-all. Do NOT add FormsModule to standalone component @Component({ imports }) unless the template actually uses ngModel — importing it triggers Angular JIT PlatformLocation error in Vitest.
 
 ## Backlog
 - Out-of-scope ideas are tracked in `plan/todo.md`. Add to it as they arise; review and prioritise at the end of the initial development phase.
