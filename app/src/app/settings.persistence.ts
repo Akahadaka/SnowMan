@@ -121,6 +121,7 @@ export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSetti
     selectedStoreId: patch.selectedStoreId ?? base.selectedStoreId,
     autoBackupOnDeploy: patch.autoBackupOnDeploy ?? base.autoBackupOnDeploy,
     onboardingComplete: patch.onboardingComplete ?? base.onboardingComplete,
+    hasHydratedModioCache: patch.hasHydratedModioCache ?? base.hasHydratedModioCache,
     stores: mergedStores,
   };
 }
