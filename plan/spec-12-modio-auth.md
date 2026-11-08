@@ -9,8 +9,12 @@ token-based. Once authenticated, the access token is used for all mod.io API cal
 
 ## Context
 
-The app now uses mod.io access tokens persisted in settings. Build-time API-key
-injection has been removed.
+The app uses mod.io access tokens persisted in settings for catalog calls. The game
+API key is still required, but only for the email sign-in endpoints: mod.io returns
+401 (`error_ref 11000`, "malformed/missing api_key") without it, as verified against the
+live API on 2026-11-07. It is injected at runtime from the gitignored
+`src/modio-config.local.js` (template: `src/modio-config.local.example.js`), read via
+`getModioApiKey()` in `modio-config.ts`.
 
 mod.io supports OAuth 2.0 Device Flow (no redirect URI required — ideal for desktop apps):
 1. App requests a device code from mod.io.
@@ -28,8 +32,10 @@ Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 ### AC-01 mod.io auth service
 
 - Add `modio-auth.service.ts` with pure, injectable functions:
-  - `requestEmailCode(email, fetchFn)` — POST to mod.io email auth endpoint.
-  - `exchangeEmailCode(email, code, fetchFn)` — POST security code, return access token string.
+  - `requestEmailCode(email, gameId, apiKey, fetchFn)` — POST to mod.io email auth endpoint.
+  - `exchangeEmailCode(email, code, gameId, apiKey, fetchFn)` — POST security code, return access token string.
+- Both functions send `api_key` in the form body.
+- Both functions throw without calling mod.io when the API key is empty.
 - Both functions throw on non-2xx HTTP responses.
 - Service is fully unit-tested with injected fetch stubs.
 
@@ -83,6 +89,7 @@ Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 ## Test Files
 
 - `src/app/modio-auth.service.spec.ts` — unit tests for `requestEmailCode` and `exchangeEmailCode`.
+- `src/app/modio-config.spec.ts` — unit tests for `getModioApiKey`.
 - `src/app/settings.persistence.spec.ts` — updated snapshots for new fields.
 - `src/app/settings-page.component.spec.ts` — updated snapshots and new auth UI tests.
 - `src/app/modio-catalog.service.spec.ts` — new tests for bearer auth mode.
@@ -93,8 +100,8 @@ Reference: https://docs.mod.io/#email-authentication (Device/email OTP flow)
 
 - mod.io email auth endpoints:
   - Request code: `POST https://g-306.modapi.io/v1/oauth/emailrequest`
-    - body: `email=<email>`
+    - body: `api_key=<key>&email=<email>`
   - Exchange code: `POST https://g-306.modapi.io/v1/oauth/emailexchange`
-    - body: `email=<email>&security_code=<code>`
+    - body: `api_key=<key>&email=<email>&security_code=<code>`
     - returns `{ "access_token": "..." }`
 - The game-scoped base URL (`g-306.modapi.io`) is used for all calls.

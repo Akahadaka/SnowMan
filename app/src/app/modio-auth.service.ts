@@ -10,49 +10,67 @@ interface TokenPayload {
   access_token?: unknown;
 }
 
-function emailRequestUrl(gameId: number): string {
-  return `https://g-${gameId}.modapi.io/v1/oauth/emailrequest`;
+type EmailAuthEndpoint = 'emailrequest' | 'emailexchange';
+
+const defaultFetch: FetchLike = (input, init) => fetch(input, init);
+
+function emailAuthUrl(gameId: number, endpoint: EmailAuthEndpoint): string {
+  return `https://g-${gameId}.modapi.io/v1/oauth/${endpoint}`;
 }
 
-function emailExchangeUrl(gameId: number): string {
-  return `https://g-${gameId}.modapi.io/v1/oauth/emailexchange`;
-}
-
-export async function requestEmailCode(
-  email: string,
+/**
+ * POSTs a form to a mod.io email auth endpoint. mod.io requires the game API key on these
+ * calls (401, error_ref 11000 without it), so fail fast locally when it is not configured.
+ */
+async function postEmailAuth(
+  endpoint: EmailAuthEndpoint,
   gameId: number,
-  fetchFn: FetchLike = (input, init) => fetch(input, init),
-): Promise<void> {
-  const body = new URLSearchParams({ email });
+  apiKey: string,
+  fields: Record<string, string>,
+  fetchFn: FetchLike,
+): Promise<FetchResponseLike> {
+  const key = apiKey.trim();
+  if (!key) {
+    throw new Error('mod.io API key is not configured for this build.');
+  }
 
-  const response = await fetchFn(emailRequestUrl(gameId), {
+  const body = new URLSearchParams({ ...fields, api_key: key });
+  const response = await fetchFn(emailAuthUrl(gameId, endpoint), {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
 
   if (!response.ok) {
-    throw new Error(`mod.io email request failed with status ${response.status ?? 'unknown'}`);
+    throw new Error(`mod.io ${endpoint} failed with status ${response.status ?? 'unknown'}`);
   }
+
+  return response;
+}
+
+export async function requestEmailCode(
+  email: string,
+  gameId: number,
+  apiKey: string,
+  fetchFn: FetchLike = defaultFetch,
+): Promise<void> {
+  await postEmailAuth('emailrequest', gameId, apiKey, { email }, fetchFn);
 }
 
 export async function exchangeEmailCode(
   email: string,
   securityCode: string,
   gameId: number,
-  fetchFn: FetchLike = (input, init) => fetch(input, init),
+  apiKey: string,
+  fetchFn: FetchLike = defaultFetch,
 ): Promise<string> {
-  const body = new URLSearchParams({ email, security_code: securityCode });
-
-  const response = await fetchFn(emailExchangeUrl(gameId), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  });
-
-  if (!response.ok) {
-    throw new Error(`mod.io email exchange failed with status ${response.status ?? 'unknown'}`);
-  }
+  const response = await postEmailAuth(
+    'emailexchange',
+    gameId,
+    apiKey,
+    { email, security_code: securityCode },
+    fetchFn,
+  );
 
   const payload = (await response.json()) as TokenPayload;
   if (typeof payload.access_token !== 'string' || !payload.access_token) {

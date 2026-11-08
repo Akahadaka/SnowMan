@@ -25,6 +25,7 @@ import {
   type StoreOption,
 } from './game-context';
 import { exchangeEmailCode, requestEmailCode } from './modio-auth.service';
+import { getModioApiKey } from './modio-config';
 
 const MODIO_GAME_ID = 306;
 
@@ -247,7 +248,7 @@ export class SettingsPageComponent {
     this.modioError = '';
     this.modioSending = true;
     try {
-      await requestEmailCode(this.modioEmail.trim(), MODIO_GAME_ID);
+      await requestEmailCode(this.modioEmail.trim(), MODIO_GAME_ID, getModioApiKey());
       this.modioCodeSent = true;
     } catch (e) {
       this.modioError = e instanceof Error ? e.message : 'Failed to send code.';
@@ -264,6 +265,7 @@ export class SettingsPageComponent {
         this.modioEmail.trim(),
         this.modioCode.trim(),
         MODIO_GAME_ID,
+        getModioApiKey(),
       );
       this.settings = {
         ...this.settings,

@@ -37,6 +37,9 @@ yarn-error.log
 testem.log
 /typings
 
+# Local runtime secrets
+/src/modio-config.local.js
+
 # System files
 .DS_Store
 Thumbs.db
