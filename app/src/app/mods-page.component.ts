@@ -23,14 +23,13 @@ import type { Profile } from './profile.types';
 import {
   loadSettings,
   mergeSettings,
+  resolveModioCredential,
   saveSettings,
   type AppSettings,
   type StorageLike,
 } from './settings.persistence';
 
 type ModsTab = 'installed' | 'online' | 'subscribed';
-
-type GlobalWithModioKey = typeof globalThis & { MODIO_API_KEY?: string };
 
 interface OnlineCatalogItem {
   key: string;
@@ -56,10 +55,6 @@ interface CategoryFilterOption {
 const MODIO_GAME_ID = 306;
 const UNCATEGORIZED_KEY = '__uncategorized';
 const UNCATEGORIZED_LABEL = 'Uncategorized';
-
-function getModioApiKey(): string {
-  return (globalThis as GlobalWithModioKey).MODIO_API_KEY ?? '';
-}
 
 function normalizeCatalogUrl(url: string): string {
   const trimmed = url.trim();
@@ -593,7 +588,7 @@ export class ModsPageComponent implements OnInit {
     this.settings = loadSettings(this.storage);
     this.refreshProfiles();
     void this.initializeCatalog();
-    if (getModioApiKey().trim()) {
+    if (resolveModioCredential(this.settings).value) {
       void this.loadModioCatalog();
     }
   }
@@ -1095,19 +1090,20 @@ export class ModsPageComponent implements OnInit {
   async loadModioCatalog(): Promise<void> {
     this.modioLoading = true;
     this.modioError = '';
-    const modioApiKey = getModioApiKey();
+    const cred = resolveModioCredential(this.settings);
+    const accessToken = cred.value;
 
     try {
       this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
 
       const shouldRefreshFromApi =
-        Boolean(modioApiKey.trim()) &&
+        Boolean(accessToken.trim()) &&
         (!this.settings.hasHydratedModioCache || this.modioMods.length === 0) &&
         !this.searchQuery.trim();
       if (shouldRefreshFromApi) {
         const allItems = await fetchAllModioCatalog({
           gameId: MODIO_GAME_ID,
-          apiKey: modioApiKey,
+          accessToken,
           pageSize: 100,
           maxPages: 200,
         });
@@ -1117,8 +1113,8 @@ export class ModsPageComponent implements OnInit {
         this.modioMods = await searchModioCatalog(this.searchQuery, 2000);
       }
 
-      if (!modioApiKey.trim() && this.modioMods.length === 0) {
-        this.modioError = 'mod.io API key is not configured for this build.';
+      if (!accessToken.trim() && this.modioMods.length === 0) {
+        this.modioError = 'Sign in to mod.io in Settings to browse mods.';
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

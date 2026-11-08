@@ -27,6 +27,8 @@ export interface AppSettings {
   autoBackupOnDeploy: boolean;
   onboardingComplete: boolean;
   hasHydratedModioCache: boolean;
+  modioAccessToken: string;
+  modioEmail: string;
   stores: StoresSettingsMap;
 }
 
@@ -36,6 +38,8 @@ export interface SettingsPatch {
   autoBackupOnDeploy?: boolean;
   onboardingComplete?: boolean;
   hasHydratedModioCache?: boolean;
+  modioAccessToken?: string;
+  modioEmail?: string;
   stores?: Partial<
     Record<StoreId, { games?: Partial<Record<GameId, Partial<StoreGameSettings>>> }>
   >;
@@ -49,12 +53,27 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoBackupOnDeploy: true,
   onboardingComplete: false,
   hasHydratedModioCache: false,
+  modioAccessToken: '',
+  modioEmail: '',
   stores: {},
 };
 
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+}
+
+/**
+ * Returns the persisted mod.io OAuth access token, if present.
+ */
+export function resolveModioCredential(settings: AppSettings): {
+  value: string;
+  mode: 'bearer' | 'none';
+} {
+  if (settings.modioAccessToken.trim()) {
+    return { value: settings.modioAccessToken.trim(), mode: 'bearer' };
+  }
+  return { value: '', mode: 'none' };
 }
 
 export function getInstallPathForStore(
@@ -122,6 +141,8 @@ export function mergeSettings(patch: SettingsPatch, base: AppSettings): AppSetti
     autoBackupOnDeploy: patch.autoBackupOnDeploy ?? base.autoBackupOnDeploy,
     onboardingComplete: patch.onboardingComplete ?? base.onboardingComplete,
     hasHydratedModioCache: patch.hasHydratedModioCache ?? base.hasHydratedModioCache,
+    modioAccessToken: patch.modioAccessToken ?? base.modioAccessToken,
+    modioEmail: patch.modioEmail ?? base.modioEmail,
     stores: mergedStores,
   };
 }

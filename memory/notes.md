@@ -15,6 +15,8 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 - Iteration 08 branch: feature/07-controlled-deploy-launch-restore (spec-08-profile-create-and-launch-flow, merged with PR #8)
 - Iteration 09 branch: feature/09-local-mod-import-metadata
 - Iteration 10 branch: feature/10-guided-onboarding-flow
+- Iteration 11 branch: feature/11-modio-catalog-browse-search
+- Iteration 12 branch: feature/12-modio-auth-install
 
 ## Decision Log
 - Use `npm` as frontend package manager for V1 baseline.
@@ -35,3 +37,4 @@ Use this file for short-lived planning notes, reminders, and decisions that are 
 ## Risks / Follow-ups
 - Environment: some terminals may not have Node/NPM on PATH even when repository scripts assume it.
 - Iteration 09: add mod metadata/import so deploy candidates can come from real selected mods.
+- Iteration 12 (mod.io auth): the email OAuth endpoints (`/oauth/emailrequest`, `/oauth/emailexchange`) require the game `api_key` (401 error_ref 11000 without it). The key comes from the gitignored `app/src/modio-config.local.js`. Catalog calls use `Authorization: Bearer <token>`. CI release builds don't inject the key yet, so released builds can't sign in until that is wired up.

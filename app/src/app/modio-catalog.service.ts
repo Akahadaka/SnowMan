@@ -15,7 +15,7 @@ export interface ModioCatalogItem {
 
 export interface FetchModioCatalogParams {
   gameId: number;
-  apiKey: string;
+  accessToken: string;
   query: string;
   limit?: number;
   offset?: number;
@@ -27,7 +27,7 @@ interface FetchResponseLike {
   json: () => Promise<unknown>;
 }
 
-type FetchLike = (input: string) => Promise<FetchResponseLike>;
+type FetchLike = (input: string, init?: RequestInit) => Promise<FetchResponseLike>;
 
 interface ModioTagLike {
   name?: unknown;
@@ -80,7 +80,6 @@ function asNumber(value: unknown): number {
 
 export function buildModioCatalogUrl(params: {
   gameId: number;
-  apiKey: string;
   limit?: number;
   offset?: number;
 }): string {
@@ -89,7 +88,6 @@ export function buildModioCatalogUrl(params: {
   const offset = params.offset ?? 0;
 
   const query = new URLSearchParams({
-    api_key: params.apiKey,
     _limit: String(limit),
     _offset: String(offset),
     _sort: '-date_updated',
@@ -144,21 +142,24 @@ function filterByQuery(items: ModioCatalogItem[], rawQuery: string): ModioCatalo
 
 export async function fetchModioCatalog(
   params: FetchModioCatalogParams,
-  fetchFn: FetchLike = (input) => fetch(input),
+  fetchFn: FetchLike = (input, init) => fetch(input, init),
 ): Promise<ModioCatalogItem[]> {
-  const apiKey = params.apiKey.trim();
-  if (!apiKey) {
+  const accessToken = params.accessToken.trim();
+  if (!accessToken) {
     return [];
   }
 
   const url = buildModioCatalogUrl({
     gameId: params.gameId,
-    apiKey,
     limit: params.limit,
     offset: params.offset,
   });
 
-  const response = await fetchFn(url);
+  const response = await fetchFn(url, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
   if (!response.ok) {
     throw new Error(`mod.io request failed with status ${response.status ?? 'unknown'}`);
   }
@@ -174,10 +175,10 @@ export async function fetchAllModioCatalog(
     pageSize?: number;
     maxPages?: number;
   },
-  fetchFn: FetchLike = (input) => fetch(input),
+  fetchFn: FetchLike = (input, init) => fetch(input, init),
 ): Promise<ModioCatalogItem[]> {
-  const apiKey = params.apiKey.trim();
-  if (!apiKey) {
+  const accessToken = params.accessToken.trim();
+  if (!accessToken) {
     return [];
   }
 
@@ -190,7 +191,7 @@ export async function fetchAllModioCatalog(
     const pageItems = await fetchModioCatalog(
       {
         gameId: params.gameId,
-        apiKey,
+        accessToken,
         query: '',
         limit: pageSize,
         offset,
